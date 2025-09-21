@@ -17,7 +17,8 @@ public class File {
     @Column(nullable = false)
     private String fileType;
 
-    @Column(columnDefinition = "BYTES",nullable = false)
+    @Lob
+    @Column(nullable = false, columnDefinition = "LONGBLOB")
     private byte[] fileData;
 
     @Column(name = "file_extension", length = 50)
@@ -37,7 +38,6 @@ public class File {
         this.fileExtension = fileExtension;
         this.user = user;
     }
-
 
     public Long getId() {
         return id;

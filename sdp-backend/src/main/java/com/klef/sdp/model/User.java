@@ -5,25 +5,18 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "users")
 public class User {
-    @Id
 
-    @SequenceGenerator(
-            name = "user_seq",
-            sequenceName = "user_sequence",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "user_seq"
-    )
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-
-    @Column
+    @Column(nullable = false, unique = true)
     private String username;
-    @Column
+
+    @Column(nullable = false, unique = true)
     private String email;
-    @Column
+
+    @Column(nullable = false)
     private String password;
 
     @Lob
@@ -53,6 +46,8 @@ public class User {
         this.profilePictureType = profilePictureType;
         this.isAdmin = false;
     }
+
+    // ---------------- Getters and Setters ----------------
 
     public int getId() {
         return id;
@@ -112,8 +107,13 @@ public class User {
 
     @Override
     public String toString() {
-        return "User{id=" + id + ", username='" + username + "', email='" + email +
-                "', profilePicture=" + (profilePicture != null ? "present" : "null") +
-                ", profilePictureType='" + profilePictureType + "', isAdmin=" + isAdmin + "}";
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", profilePicture=" + (profilePicture != null ? "present" : "null") +
+                ", profilePictureType='" + profilePictureType + '\'' +
+                ", isAdmin=" + isAdmin +
+                '}';
     }
 }
