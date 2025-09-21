@@ -1,5 +1,7 @@
+
 import React from 'react';
 import { Upload, Shield, Zap, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function SwiftyyLanding() {
   return (
@@ -36,12 +38,16 @@ export default function SwiftyyLanding() {
           <div className="flex justify-between items-center">
             <div className="text-2xl font-bold">Swiftyy</div>
             <div className="flex space-x-3">
-              <button className="border-2 border-black text-black hover:bg-black hover:text-white hover:scale-110 hover:shadow-lg transition-all duration-300 ease-out rounded-full px-6 py-2 font-medium">
-                Sign In
-              </button>
-              <button className="bg-black text-white hover:bg-gray-800 hover:scale-110 hover:shadow-xl transition-all duration-300 ease-out rounded-full px-6 py-2 font-medium">
-                Get Started
-              </button>
+              <Link to="/signin">
+                <button className="border-2 border-black text-black hover:bg-black hover:text-white hover:scale-110 hover:shadow-lg transition-all duration-300 ease-out rounded-full px-6 py-2 font-medium">
+                  Sign In
+                </button>
+              </Link>
+              <Link to="/register">
+                <button className="bg-black text-white hover:bg-gray-800 hover:scale-110 hover:shadow-xl transition-all duration-300 ease-out rounded-full px-6 py-2 font-medium">
+                  Get Started
+                </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -59,10 +65,12 @@ export default function SwiftyyLanding() {
             The simplest way to share files securely. No registration required.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in-delay-2">
-            <button className="bg-black text-white hover:bg-gray-800 hover:scale-110 hover:shadow-2xl hover:rotate-1 transition-all duration-300 ease-out px-8 py-4 rounded-full text-lg font-medium flex items-center justify-center">
-              <Upload className="mr-2 h-5 w-5 animate-pulse" />
-              Start Sharing
-            </button>
+            <Link to="/register">
+              <button className="bg-black text-white hover:bg-gray-800 hover:scale-110 hover:shadow-2xl hover:rotate-1 transition-all duration-300 ease-out px-8 py-4 rounded-full text-lg font-medium flex items-center justify-center">
+                <Upload className="mr-2 h-5 w-5 animate-pulse" />
+                Start Sharing
+              </button>
+            </Link>
             <button className="border-2 border-black text-black hover:bg-black hover:text-white hover:scale-110 hover:shadow-xl hover:-rotate-1 transition-all duration-300 ease-out px-8 py-4 rounded-full text-lg font-medium">
               Learn More
             </button>
@@ -139,10 +147,12 @@ export default function SwiftyyLanding() {
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
           <p className="text-gray-300 mb-6">Join thousands sharing with Swiftyy</p>
-          <button className="bg-white text-black hover:bg-gray-100 hover:scale-110 hover:shadow-2xl hover:rotate-2 transition-all duration-300 ease-out px-8 py-4 rounded-full text-lg font-medium flex items-center justify-center mx-auto">
-            <Upload className="mr-2 h-5 w-5 animate-bounce" />
-            Start Now
-          </button>
+          <Link to="/register">
+            <button className="bg-white text-black hover:bg-gray-100 hover:scale-110 hover:shadow-2xl hover:rotate-2 transition-all duration-300 ease-out px-8 py-4 rounded-full text-lg font-medium flex items-center justify-center mx-auto">
+              <Upload className="mr-2 h-5 w-5 animate-bounce" />
+              Start Now
+            </button>
+          </Link>
         </div>
       </section>
 

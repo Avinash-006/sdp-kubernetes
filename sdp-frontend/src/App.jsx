@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
+import NavBar from './Pages/NavBar.jsx'
 // import './App.css'
 import LandingPage from './Pages/LandingPage.jsx'
 function App() {
@@ -8,7 +9,7 @@ function App() {
 
   return (
     <>
-    <LandingPage />  
+    <NavBar/>  
     </>
   )
 }
