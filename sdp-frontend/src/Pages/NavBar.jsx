@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import SwiftyyLanding from './LandingPage';
 import SignIn from './SignIn';
 import Register from './Register';
+import ForgotPassword from './ForgotPassword';
 
 export default function NavBar() {
   return (
@@ -11,6 +12,7 @@ export default function NavBar() {
         <Route path="/" element={<SwiftyyLanding />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
     </BrowserRouter>
   )
