@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Camera, Mail, Lock, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
+import config from '../../config'; // Adjust path to your config.js file
+
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
@@ -10,6 +12,7 @@ const Profile = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showAlert, setShowAlert] = useState({ type: '', message: '', show: false });
   const navigate = useNavigate();
+  
   const [userData, setUserData] = useState({
     id: null,
     username: '',
@@ -25,7 +28,8 @@ const Profile = () => {
     confirmNewPassword: '',
   });
 
-  const API_BASE_URL = 'http://10.46.2.12:8080/api/users'; // Adjust to your backend URL
+  // Use the URL from config.js
+  const API_BASE_URL = `${config.API_BASE_URL}/api/users`;
 
   // Password validation regex patterns
   const passwordRegex = {
@@ -191,15 +195,31 @@ const Profile = () => {
     }
 
     try {
-      showNotification('success', 'Password updated successfully! (Demo)');
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmNewPassword: '',
+      // Use the API endpoint from config
+      const response = await axios.put(`${API_BASE_URL}/update-password/${userData.id}`, {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
       });
+
+      if (response.data.success) {
+        showNotification('success', 'Password updated successfully!');
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmNewPassword: '',
+        });
+      } else {
+        showNotification('error', response.data.message || 'Failed to update password');
+      }
     } catch (error) {
       console.error('Password update error:', error);
-      showNotification('error', 'Failed to update password');
+      if (error.response?.status === 401) {
+        showNotification('error', 'Current password is incorrect');
+      } else if (error.response?.status === 400) {
+        showNotification('error', error.response.data.message || 'Invalid password format');
+      } else {
+        showNotification('error', 'Failed to update password');
+      }
     }
   };
 
@@ -296,18 +316,18 @@ const Profile = () => {
               </div>
             </div>
             <div className="flex space-x-3">
-                <button
-      onClick={() => navigate("/drive")}
-      className="border-2 border-black text-black hover:bg-black hover:text-white hover:scale-110 hover:shadow-lg transition-all duration-300 ease-out rounded-full px-6 py-2 font-medium flex items-center space-x-2"
-    >
-      <span>Drive</span>
-    </button>
-               <button
-      onClick={() => navigate("/signin")}
-      className="bg-black text-white hover:bg-gray-800 hover:scale-110 hover:shadow-xl transition-all duration-300 ease-out rounded-full px-6 py-2 font-medium flex items-center space-x-2"
-    >
-      <span>Sign Out</span>
-    </button>
+              <button
+                onClick={() => navigate("/drive")}
+                className="border-2 border-black text-black hover:bg-black hover:text-white hover:scale-110 hover:shadow-lg transition-all duration-300 ease-out rounded-full px-6 py-2 font-medium flex items-center space-x-2"
+              >
+                <span>Drive</span>
+              </button>
+              <button
+                onClick={() => navigate("/signin")}
+                className="bg-black text-white hover:bg-gray-800 hover:scale-110 hover:shadow-xl transition-all duration-300 ease-out rounded-full px-6 py-2 font-medium flex items-center space-x-2"
+              >
+                <span>Sign Out</span>
+              </button>
             </div>
           </div>
         </div>

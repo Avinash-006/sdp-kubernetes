@@ -1,6 +1,6 @@
-const config = 
-{
-    "url":"http://10.46.2.12:8080"
+const config = {
+    "url": "http://localhost:8080",
+    "wsUrl": "http://localhost:8080/ws" // Using http:// for SockJS
 }
 
 export default config
