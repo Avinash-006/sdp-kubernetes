@@ -29,7 +29,7 @@ const Profile = () => {
   });
 
   // Use the URL from config.js
-  const API_BASE_URL = `${config.API_BASE_URL}/api/users`;
+  const API_BASE_URL = `${config.url}/api/users`;
 
   // Password validation regex patterns
   const passwordRegex = {

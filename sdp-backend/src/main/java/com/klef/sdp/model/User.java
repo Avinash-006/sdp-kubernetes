@@ -19,11 +19,13 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    // Explicitly force Hibernate to use LONGBLOB
     @Lob
-    @Column(name = "profile_picture", nullable = true)
+    @Column(name = "profile_picture", columnDefinition = "LONGBLOB", nullable = true)
     private byte[] profilePicture;
 
-    @Column(name = "profile_picture_type", nullable = true)
+    // Limit MIME type to reasonable length
+    @Column(name = "profile_picture_type", length = 50, nullable = true)
     private String profilePictureType;
 
     @Column(name = "is_admin", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")

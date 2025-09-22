@@ -22,11 +22,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Register endpoint with SockJS support
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("http://localhost:5173", "http://10.46.2.12:5173", "http://localhost:3000")
+                .setAllowedOriginPatterns("http://localhost:5173", "http://10.46.2.12:5173", "http://localhost:80","http://localhost:3000")
                 .withSockJS(); // Enables SockJS fallback
 
         // Register the same endpoint for raw WebSocket connections
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("http://localhost:5173", "http://10.46.2.12:5173", "http://localhost:3000");
+                .setAllowedOriginPatterns("http://localhost:5173", "http://10.46.2.12:5173", "http://localhost:80","http://localhost:3000");
     }
 }
