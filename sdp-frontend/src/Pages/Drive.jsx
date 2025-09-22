@@ -239,21 +239,7 @@ const ProfileDropdown = ({ user, onLogout, navigate }) => {
           </div>
 
           {/* Profile Stats */}
-          <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
-            <div className="text-xs text-gray-500 space-y-1">
-              <div className="flex justify-between">
-                <span>Storage Used:</span>
-                <span className="font-medium">2.3 GB</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Files:</span>
-                <span className="font-medium">24</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: '73%' }}></div>
-              </div>
-            </div>
-          </div>
+         
         </div>
       )}
     </div>
@@ -272,7 +258,8 @@ function Drive() {
   const [downloadProgress, setDownloadProgress] = useState({});
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
-  
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false); // New state for toggle switch
+
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -670,7 +657,8 @@ function Drive() {
   };
 
   const filteredFiles = files.filter(file =>
-    file.name.toLowerCase().includes(searchQuery.toLowerCase())
+    file.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    (!showFavoritesOnly || file.favorite)
   );
 
   const generateShareLink = (file) => {
@@ -770,17 +758,6 @@ function Drive() {
     return <FileIcon className="w-6 h-6 text-gray-500" />;
   };
 
-  // Calculate total size in MB
-  const calculateTotalSize = () => {
-    return files.reduce((acc, file) => {
-      if (file.originalSize) {
-        const sizeInMB = file.originalSize / 1024 / 1024;
-        return acc + sizeInMB;
-      }
-      return acc;
-    }, 0).toFixed(1);
-  };
-
   if (error && files.length === 0) {
     return (
       <div className="min-h-screen bg-white text-black font-sans flex items-center justify-center">
@@ -834,6 +811,20 @@ function Drive() {
                 />
               </div>
               
+              {/* Toggle Switch */}
+              <div className="flex items-center">
+                <label className="text-white text-sm font-medium mr-2">Favorites Only</label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showFavoritesOnly}
+                    onChange={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
               {/* View Mode Toggle */}
               <div className="flex bg-gray-700 rounded-md overflow-hidden">
                 <button 
@@ -881,28 +872,6 @@ function Drive() {
           </div>
         </div>
       </header>
-
-      {/* Stats */}
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-6 text-center hover:-translate-y-1 hover:shadow-lg transition-all">
-            <div className="text-3xl font-bold text-black mb-2">{files.length}</div>
-            <div className="text-gray-500 text-sm uppercase tracking-wide">Total Files</div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-6 text-center hover:-translate-y-1 hover:shadow-lg transition-all">
-            <div className="text-3xl font-bold text-black mb-2">{files.filter(f => f.favorite).length}</div>
-            <div className="text-gray-500 text-sm uppercase tracking-wide">Favorites</div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-6 text-center hover:-translate-y-1 hover:shadow-lg transition-all">
-            <div className="text-3xl font-bold text-black mb-2">{files.reduce((acc, f) => acc + f.downloads, 0)}</div>
-            <div className="text-gray-500 text-sm uppercase tracking-wide">Downloads</div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-6 text-center hover:-translate-y-1 hover:shadow-lg transition-all">
-            <div className="text-3xl font-bold text-black mb-2">{calculateTotalSize()} MB</div>
-            <div className="text-gray-500 text-sm uppercase tracking-wide">Total Size</div>
-          </div>
-        </div>
-      </div>
 
       {/* File Grid/List */}
       <main className="max-w-7xl mx-auto px-8 pb-8">
