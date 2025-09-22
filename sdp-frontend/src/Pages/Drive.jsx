@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import config from '../../config';
 
 // Professional SVG vector icons
@@ -92,6 +93,174 @@ const XIcon = () => (
   </svg>
 );
 
+const UserIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+
+const LogOutIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    <polyline points="16,17 21,12 16,7"/>
+    <line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+);
+
+// Profile Dropdown Component
+const ProfileDropdown = ({ user, onLogout }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleProfileClick = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const handleLogout = () => {
+    // Clear localStorage
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    onLogout();
+    toast.success('Logged out successfully');
+    navigate('/signin'); // Redirect to signin page
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Profile Button */}
+      <button
+        onClick={handleProfileClick}
+        className="flex items-center space-x-3 p-2 rounded-full hover:bg-white/20 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/30"
+        title="Profile"
+      >
+        {/* Profile Avatar */}
+        <div className="relative">
+          {user?.profilePicture ? (
+            <img
+              src={`${config.url}/api/users/profile-picture/${user.id}`}
+              alt="Profile"
+              className="w-10 h-10 rounded-full object-cover border-2 border-white/20"
+              onError={(e) => {
+                // Fallback to default avatar if profile picture fails to load
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-2 border-white/20 ${user?.profilePicture ? 'hidden' : ''}`}>
+            <span className="text-white font-semibold text-sm">
+              {user?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+            </span>
+          </div>
+          {/* Online indicator */}
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
+        </div>
+        
+        {/* Username */}
+        <div className="hidden sm:block">
+          <p className="text-sm font-medium text-white truncate max-w-32">
+            {user?.username || user?.email || 'User'}
+          </p>
+          <p className="text-xs text-white/70">Welcome back</p>
+        </div>
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Profile Header */}
+          <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                {user?.profilePicture ? (
+                  <img
+                    src={`${config.url}/api/users/profile-picture/${user.id}`}
+                    alt="Profile"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-2 border-gray-200 ${user?.profilePicture ? 'hidden' : ''}`}>
+                  <span className="text-white font-semibold text-sm">
+                    {user?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">
+                  {user?.username || user?.email || 'User'}
+                </h3>
+                <p className="text-sm text-gray-600">{user?.email || 'user@example.com'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Menu Items */}
+          <div className="py-2">
+            <button
+              onClick={() => {
+                window.location.href = '/profile';
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 transition-all duration-150 text-gray-700 hover:text-gray-900"
+            >
+              <UserIcon className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm font-medium">My Profile</span>
+            </button>
+
+            <div className="border-t border-gray-100 my-2"></div>
+
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-red-50 transition-all duration-150 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOutIcon className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm font-medium">Sign Out</span>
+            </button>
+          </div>
+
+          {/* Profile Stats */}
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
+            <div className="text-xs text-gray-500 space-y-1">
+              <div className="flex justify-between">
+                <span>Storage Used:</span>
+                <span className="font-medium">2.3 GB</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Files:</span>
+                <span className="font-medium">24</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: '73%' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 function Drive() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -106,6 +275,15 @@ function Drive() {
   const [error, setError] = useState(null);
   
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Handle logout from profile dropdown
+  const handleLogout = () => {
+    setUser(null);
+    setFiles([]);
+    setError('User logged out');
+    navigate('/signin');
+  };
 
   // Get user from localStorage or context and fetch files
   useEffect(() => {
@@ -118,26 +296,21 @@ function Drive() {
           setUser(parsedUser);
           await fetchFiles(parsedUser);
         } else {
-          // Alternative: Get from auth context or make API call
-          // const response = await axios.get(`${config.url}/api/auth/me`);
-          // const userData = response.data;
-          // localStorage.setItem('user', JSON.stringify(userData));
-          // setUser(userData);
-          // await fetchFiles(userData);
-          
           // For now, redirect to login or show error
           setError('User not authenticated. Please log in.');
           toast.error('Please log in to access your files');
+          navigate('/signin');
         }
       } catch (err) {
         console.error('Error fetching user:', err);
         setError('Failed to authenticate user');
         toast.error('Authentication failed. Please log in.');
+        navigate('/signin');
       }
     };
 
     getUserAndFetchFiles();
-  }, []);
+  }, [navigate]);
 
   const fetchFiles = async (currentUser) => {
     if (!currentUser?.username) {
@@ -152,14 +325,13 @@ function Drive() {
     try {
       const response = await axios.get(`${config.url}/api/file/viewall/${currentUser.username}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add if using JWT
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
 
       const fetchedFiles = Array.isArray(response.data) ? response.data : [];
 
       if (fetchedFiles.length === 0) {
-        // Fixed: Use toast with type option instead of toast.info
         toast('No files found. Upload your first file!', { 
           type: 'info',
           duration: 4000 
@@ -181,7 +353,7 @@ function Drive() {
           favorite: file.isFavourite || false,
           extension: fileExtension,
           previewUrl: null,
-          originalSize: file.size || 0, // Store original size for calculations
+          originalSize: file.size || 0,
         };
       });
 
@@ -190,7 +362,7 @@ function Drive() {
       console.error('Error fetching files:', error);
       setError('Failed to load files from server');
       toast.error(`Failed to load files: ${error.response?.data?.message || error.message}`);
-      setFiles([]); // Empty array instead of mock data
+      setFiles([]);
     } finally {
       setLoading(false);
     }
@@ -219,6 +391,7 @@ function Drive() {
   const handleFiles = async (fileList) => {
     if (!user) {
       toast.error('User not authenticated. Please log in.');
+      navigate('/signin');
       return;
     }
 
@@ -300,7 +473,7 @@ function Drive() {
           },
           headers: {
             'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${localStorage.getItem('token')}` // Add if using JWT
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
           timeout: 30000, // 30 second timeout
         });
@@ -352,13 +525,14 @@ function Drive() {
   const deleteFile = async (id) => {
     if (!user) {
       toast.error('User not authenticated');
+      navigate('/signin');
       return;
     }
 
     try {
       await axios.delete(`${config.url}/api/file/delete/${id}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add if using JWT
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       toast.success('File deleted successfully');
@@ -372,6 +546,7 @@ function Drive() {
   const toggleFavorite = async (id) => {
     if (!user) {
       toast.error('User not authenticated');
+      navigate('/signin');
       return;
     }
 
@@ -382,7 +557,7 @@ function Drive() {
       const newFavoriteStatus = !file.favorite;
       await axios.put(`${config.url}/api/users/file/favourite/${id}/${newFavoriteStatus ? 1 : 0}`, {}, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add if using JWT
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       
@@ -397,6 +572,7 @@ function Drive() {
   const handleDownload = async (file) => {
     if (!file || !user) {
       toast.error('Cannot download: User not authenticated');
+      navigate('/signin');
       return;
     }
 
@@ -406,7 +582,7 @@ function Drive() {
       const response = await axios.get(`${config.url}/api/file/download/${file.id}`, {
         responseType: 'blob',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add if using JWT
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         onDownloadProgress: (progressEvent) => {
           if (progressEvent.total) {
@@ -447,6 +623,7 @@ function Drive() {
   const handleView = async (file) => {
     if (!file || !user) {
       toast.error('Cannot view file: User not authenticated');
+      navigate('/signin');
       return;
     }
 
@@ -459,7 +636,7 @@ function Drive() {
       const response = await axios.get(`${config.url}/api/file/download/${file.id}`, {
         responseType: 'blob',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add if using JWT
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
       });
 
@@ -480,7 +657,6 @@ function Drive() {
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
-        // Fixed: Use toast with type option instead of toast.info
         toast(`${file.name} downloaded (cannot be viewed in browser)`, { 
           type: 'info',
           duration: 4000 
@@ -616,10 +792,10 @@ function Drive() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button 
-            onClick={() => window.location.href = '/login'}
+            onClick={() => navigate('/signin')}
             className="bg-black text-white px-6 py-3 rounded-md font-semibold hover:bg-gray-800 transition-all"
           >
-            Go to Login
+            Go to Sign In
           </button>
         </div>
       </div>
@@ -651,7 +827,9 @@ function Drive() {
                 </span>
               )}
             </div>
+            
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+              {/* Search Bar */}
               <div className="flex items-center bg-white border border-gray-300 rounded-full px-5 py-2 min-w-80 shadow-sm focus-within:border-black focus-within:shadow-md transition-all">
                 <input
                   type="text"
@@ -661,6 +839,8 @@ function Drive() {
                   className="border-none outline-none flex-1 text-black placeholder-gray-500"
                 />
               </div>
+              
+              {/* View Mode Toggle */}
               <div className="flex bg-gray-700 rounded-md overflow-hidden">
                 <button 
                   className={`px-3 py-2 transition-all ${viewMode === 'grid' ? 'bg-white text-black' : 'text-white hover:bg-gray-600'}`}
@@ -677,6 +857,8 @@ function Drive() {
                   <ListIcon />
                 </button>
               </div>
+              
+              {/* Upload Button */}
               <button 
                 className="bg-white text-black border border-gray-300 px-4 py-2 rounded-md font-semibold flex items-center gap-2 hover:bg-gray-50 hover:-translate-y-0.5 transition-all"
                 onClick={() => setUploadModal(true)}
@@ -684,6 +866,9 @@ function Drive() {
               >
                 <PlusIcon /> Upload
               </button>
+              
+              {/* Profile Dropdown - Only show if user is authenticated */}
+              {user && <ProfileDropdown user={user} onLogout={handleLogout} />}
             </div>
           </div>
         </div>
