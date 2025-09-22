@@ -821,11 +821,6 @@ function Drive() {
           <div className="flex flex-col lg:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <h1 className="text-3xl font-bold text-white">FileShare</h1>
-              {user && (
-                <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
-                  {user.username || user.email}
-                </span>
-              )}
             </div>
             
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
