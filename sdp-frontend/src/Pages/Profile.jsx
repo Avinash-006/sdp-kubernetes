@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Camera, Mail, Lock, Bell, Shield, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Camera, Mail, Lock, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 
 const Profile = () => {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -23,13 +23,6 @@ const Profile = () => {
     currentPassword: '',
     newPassword: '',
     confirmNewPassword: '',
-  });
-
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: false,
-    profileVisibility: 'public',
-    dataSharing: true,
   });
 
   const API_BASE_URL = 'http://10.46.2.12:8080/api/users'; // Adjust to your backend URL
@@ -232,10 +225,7 @@ const Profile = () => {
   };
 
   const tabs = [
-    { id: 'general', label: 'General', icon: Mail },
-    { id: 'security', label: 'Security', icon: Lock },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'privacy', label: 'Privacy', icon: Shield },
+    { id: 'profile', label: 'Profile & Security', icon: Mail },
   ];
 
   if (isLoading) {
@@ -425,9 +415,11 @@ const Profile = () => {
           </div>
 
           <div className="tab-content p-8 max-h-[600px] overflow-y-auto">
-            {activeTab === 'general' && (
-              <div className="space-y-6 animate-fade-in">
+            {activeTab === 'profile' && (
+              <div className="space-y-8 animate-fade-in">
+                {/* General Section */}
                 <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Profile Information</h3>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
                       <Mail className="h-4 w-4 text-gray-500" />
@@ -474,7 +466,128 @@ const Profile = () => {
                     />
                   </div>
                 </div>
-                
+
+                {/* Security Section */}
+                <div className="space-y-4">
+                  <div className="text-center py-4">
+                    <Lock className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Password Security</h3>
+                    <p className="text-gray-600 max-w-md mx-auto text-sm">
+                      Update your password to keep your account secure. We recommend using a strong, unique password.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) =>
+                          setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                        }
+                        className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300"
+                        placeholder="Enter current password"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) =>
+                          setPasswordData({ ...passwordData, newPassword: e.target.value })
+                        }
+                        className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300"
+                        placeholder="Create a new password"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                        Confirm New Password
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordData.confirmNewPassword}
+                        onChange={(e) =>
+                          setPasswordData({ ...passwordData, confirmNewPassword: e.target.value })
+                        }
+                        className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300"
+                        placeholder="Confirm new password"
+                      />
+                    </div>
+
+                    {passwordData.newPassword && (
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full transition-all duration-300 ${
+                                passwordStrength.strength === 'strong'
+                                  ? 'bg-green-500' 
+                                  : passwordStrength.strength === 'medium'
+                                  ? 'bg-yellow-500'
+                                  : 'bg-red-500'
+                              }`}
+                              style={{ width: `${Math.min((passwordData.newPassword.length / 12) * 100, 100)}%` }}
+                            />
+                          </div>
+                          <span className={`text-xs font-medium ${
+                            passwordStrength.strength === 'strong' ? 'text-green-600' :
+                            passwordStrength.strength === 'medium' ? 'text-yellow-600' : 'text-red-600'
+                          }`}>
+                            {passwordStrength.label}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500 space-y-1">
+                          <div className={`flex items-center space-x-2 ${passwordData.newPassword.length >= 8 ? 'text-green-600' : 'text-red-600'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${passwordData.newPassword.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            <span>At least 8 characters</span>
+                          </div>
+                          <div className={`flex items-center space-x-2 ${passwordRegex.hasNumber.test(passwordData.newPassword) ? 'text-green-600' : 'text-red-600'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${passwordRegex.hasNumber.test(passwordData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            <span>Contains a number</span>
+                          </div>
+                          <div className={`flex items-center space-x-2 ${passwordRegex.hasSpecialChar.test(passwordData.newPassword) ? 'text-green-600' : 'text-red-600'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${passwordRegex.hasSpecialChar.test(passwordData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            <span>Contains special character</span>
+                          </div>
+                          <div className={`flex items-center space-x-2 ${passwordRegex.hasUppercase.test(passwordData.newPassword) ? 'text-green-600' : 'text-red-600'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${passwordRegex.hasUppercase.test(passwordData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            <span>Contains uppercase letter</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handlePasswordUpdate}
+                      disabled={!passwordData.newPassword || passwordData.newPassword !== passwordData.confirmNewPassword}
+                      className={`w-full py-4 rounded-2xl text-lg font-semibold flex items-center justify-center space-x-3 transition-all duration-300 ${
+                        passwordData.newPassword && passwordData.newPassword === passwordData.confirmNewPassword
+                          ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:scale-105 text-white'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      <Lock className="h-5 w-5" />
+                      <span>Update Password</span>
+                    </button>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-200">
+                    <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1">
+                      <span>Forgot Password?</span>
+                      <Mail className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
                 {isEditing && (
                   <button
                     onClick={handleSave}
@@ -496,284 +609,6 @@ const Profile = () => {
                     )}
                   </button>
                 )}
-              </div>
-            )}
-
-            {activeTab === 'security' && (
-              <div className="space-y-6 animate-fade-in">
-                <div className="text-center py-8">
-                  <Lock className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">Password Security</h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    Update your password to keep your account secure. We recommend using a strong, unique password.
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      Current Password
-                    </label>
-                    <input
-                      type="password"
-                      value={passwordData.currentPassword}
-                      onChange={(e) =>
-                        setPasswordData({ ...passwordData, currentPassword: e.target.value })
-                      }
-                      className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300"
-                      placeholder="Enter current password"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={passwordData.newPassword}
-                      onChange={(e) =>
-                        setPasswordData({ ...passwordData, newPassword: e.target.value })
-                      }
-                      className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300"
-                      placeholder="Create a new password"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={passwordData.confirmNewPassword}
-                      onChange={(e) =>
-                        setPasswordData({ ...passwordData, confirmNewPassword: e.target.value })
-                      }
-                      className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300"
-                      placeholder="Confirm new password"
-                    />
-                  </div>
-
-                  {passwordData.newPassword && (
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all duration-300 ${
-                              passwordStrength.strength === 'strong'
-                                ? 'bg-green-500' 
-                                : passwordStrength.strength === 'medium'
-                                ? 'bg-yellow-500'
-                                : 'bg-red-500'
-                            }`}
-                            style={{ width: `${Math.min((passwordData.newPassword.length / 12) * 100, 100)}%` }}
-                          />
-                        </div>
-                        <span className={`text-xs font-medium ${
-                          passwordStrength.strength === 'strong' ? 'text-green-600' :
-                          passwordStrength.strength === 'medium' ? 'text-yellow-600' : 'text-red-600'
-                        }`}>
-                          {passwordStrength.label}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-500 space-y-1">
-                        <div className={`flex items-center space-x-2 ${passwordData.newPassword.length >= 8 ? 'text-green-600' : 'text-red-600'}`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${passwordData.newPassword.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                          <span>At least 8 characters</span>
-                        </div>
-                        <div className={`flex items-center space-x-2 ${passwordRegex.hasNumber.test(passwordData.newPassword) ? 'text-green-600' : 'text-red-600'}`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${passwordRegex.hasNumber.test(passwordData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                          <span>Contains a number</span>
-                        </div>
-                        <div className={`flex items-center space-x-2 ${passwordRegex.hasSpecialChar.test(passwordData.newPassword) ? 'text-green-600' : 'text-red-600'}`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${passwordRegex.hasSpecialChar.test(passwordData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                          <span>Contains special character</span>
-                        </div>
-                        <div className={`flex items-center space-x-2 ${passwordRegex.hasUppercase.test(passwordData.newPassword) ? 'text-green-600' : 'text-red-600'}`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${passwordRegex.hasUppercase.test(passwordData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                          <span>Contains uppercase letter</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={handlePasswordUpdate}
-                    disabled={!passwordData.newPassword || passwordData.newPassword !== passwordData.confirmNewPassword}
-                    className={`w-full py-4 rounded-2xl text-lg font-semibold flex items-center justify-center space-x-3 transition-all duration-300 ${
-                      passwordData.newPassword && passwordData.newPassword === passwordData.confirmNewPassword
-                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:scale-105 text-white'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    <Lock className="h-5 w-5" />
-                    <span>Update Password</span>
-                  </button>
-                </div>
-
-                <div className="pt-6 border-t border-gray-200">
-                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1">
-                    <span>Forgot Password?</span>
-                    <Mail className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'notifications' && (
-              <div className="space-y-4 animate-fade-in">
-                <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
-                    <Bell className="h-5 w-5" />
-                    <span>Notification Preferences</span>
-                  </h3>
-                  <p className="text-gray-600 mb-6">Manage how you receive updates and alerts</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-6 bg-white rounded-2xl hover:bg-gray-50/50 border border-gray-200/50 transition-all duration-300">
-                    <div>
-                      <h4 className="font-semibold text-gray-800">Email Notifications</h4>
-                      <p className="text-gray-600 text-sm">Receive email updates about your activity and important announcements</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={notificationSettings.emailNotifications}
-                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, emailNotifications: e.target.checked }))}
-                        className="sr-only peer" 
-                      />
-                      <div className="relative w-14 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-between p-6 bg-white rounded-2xl hover:bg-gray-50/50 border border-gray-200/50 transition-all duration-300">
-                    <div>
-                      <h4 className="font-semibold text-gray-800">Push Notifications</h4>
-                      <p className="text-gray-600 text-sm">Get instant notifications about file shares and downloads</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={notificationSettings.pushNotifications}
-                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, pushNotifications: e.target.checked }))}
-                        className="sr-only peer" 
-                      />
-                      <div className="relative w-14 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-between p-6 bg-white rounded-2xl hover:bg-gray-50/50 border border-gray-200/50 transition-all duration-300">
-                    <div>
-                      <h4 className="font-semibold text-gray-800">Marketing Emails</h4>
-                      <p className="text-gray-600 text-sm">Stay updated with new features and special offers</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={false}
-                        className="sr-only peer" 
-                      />
-                      <div className="relative w-14 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                  </div>
-                </div>
-
-                <button className="w-full py-3 border-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-600 transition-all duration-300 rounded-xl font-semibold">
-                  Save Notification Settings
-                </button>
-              </div>
-            )}
-
-            {activeTab === 'privacy' && (
-              <div className="space-y-4 animate-fade-in">
-                <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
-                    <Shield className="h-5 w-5" />
-                    <span>Privacy & Security</span>
-                  </h3>
-                  <p className="text-gray-600 mb-6">Control who can see your information and how your data is used</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between p-6 bg-white rounded-2xl hover:bg-gray-50/50 border border-gray-200/50 transition-all duration-300">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800 mb-2">Profile Visibility</h4>
-                      <p className="text-gray-600 text-sm mb-4">Choose who can see your profile information and activity</p>
-                      <div className="space-y-2">
-                        <label className="flex items-center space-x-3 cursor-pointer">
-                          <input 
-                            type="radio" 
-                            name="visibility" 
-                            value="public"
-                            checked={notificationSettings.profileVisibility === 'public'}
-                            onChange={(e) => setNotificationSettings(prev => ({ ...prev, profileVisibility: e.target.value }))}
-                            className="text-blue-600" 
-                          />
-                          <span className="text-sm text-gray-700">Public - Anyone can see my profile</span>
-                        </label>
-                        <label className="flex items-center space-x-3 cursor-pointer">
-                          <input 
-                            type="radio" 
-                            name="visibility" 
-                            value="friends"
-                            checked={notificationSettings.profileVisibility === 'friends'}
-                            onChange={(e) => setNotificationSettings(prev => ({ ...prev, profileVisibility: e.target.value }))}
-                            className="text-blue-600" 
-                          />
-                          <span className="text-sm text-gray-700">Friends Only - Only people I connect with</span>
-                        </label>
-                        <label className="flex items-center space-x-3 cursor-pointer">
-                          <input 
-                            type="radio" 
-                            name="visibility" 
-                            value="private"
-                            checked={notificationSettings.profileVisibility === 'private'}
-                            onChange={(e) => setNotificationSettings(prev => ({ ...prev, profileVisibility: e.target.value }))}
-                            className="text-blue-600" 
-                          />
-                          <span className="text-sm text-gray-700">Private - Only I can see my profile</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-6 bg-white rounded-2xl hover:bg-gray-50/50 border border-gray-200/50 transition-all duration-300">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800 mb-2">Data Sharing</h4>
-                      <p className="text-gray-600 text-sm">Help improve our service by sharing anonymous usage data</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={notificationSettings.dataSharing}
-                        onChange={(e) => setNotificationSettings(prev => ({ ...prev, dataSharing: e.target.checked }))}
-                        className="sr-only peer" 
-                      />
-                      <div className="relative w-14 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-between p-6 bg-white rounded-2xl hover:bg-gray-50/50 border border-gray-200/50 transition-all duration-300">
-                    <div>
-                      <h4 className="font-semibold text-gray-800">Two-Factor Authentication</h4>
-                      <p className="text-gray-600 text-sm">Add an extra layer of security to your account</p>
-                    </div>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-300 font-medium">
-                      Enable 2FA
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-6 border-t border-gray-200 space-y-2">
-                  <h4 className="font-semibold text-gray-800 mb-3">Download Your Data</h4>
-                  <p className="text-gray-600 text-sm mb-4">Request a copy of all your account data</p>
-                  <button className="w-full py-3 border-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-600 transition-all duration-300 rounded-xl font-semibold flex items-center justify-center space-x-2">
-                    <Download className="h-4 w-4" />
-                    <span>Download My Data</span>
-                  </button>
-                </div>
               </div>
             )}
           </div>
