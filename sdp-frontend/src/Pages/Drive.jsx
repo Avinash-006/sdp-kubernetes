@@ -109,9 +109,8 @@ const LogOutIcon = () => (
 );
 
 // Profile Dropdown Component
-const ProfileDropdown = ({ user, onLogout }) => {
+const ProfileDropdown = ({ user, onLogout, navigate }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -219,7 +218,7 @@ const ProfileDropdown = ({ user, onLogout }) => {
           <div className="py-2">
             <button
               onClick={() => {
-                window.location.href = '/profile';
+                navigate('/profile');
                 setIsOpen(false);
               }}
               className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 transition-all duration-150 text-gray-700 hover:text-gray-900"
@@ -877,7 +876,7 @@ function Drive() {
               </button>
               
               {/* Profile Dropdown - Only show if user is authenticated */}
-              {user && <ProfileDropdown user={user} onLogout={handleLogout} />}
+              {user && <ProfileDropdown user={user} onLogout={handleLogout} navigate={navigate} />}
             </div>
           </div>
         </div>

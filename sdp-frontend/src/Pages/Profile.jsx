@@ -32,7 +32,7 @@ export const Profile = () => {
     dataSharing: true,
   });
 
-  const API_BASE_URL = 'http://localhost:8080/api/users'; // Adjust to your backend URL
+  const API_BASE_URL = 'http://10.46.2.12:8080/api/users'; // Adjust to your backend URL
 
   // Password validation regex patterns
   const passwordRegex = {
