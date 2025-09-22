@@ -1,6 +1,6 @@
 const config = 
 {
-    "url":"https://springbackend-swiftyy.onrender.com"
+    "url":"http://localhost:8080"
 }
 
 export default config

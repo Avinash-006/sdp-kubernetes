@@ -5,14 +5,18 @@ import SignIn from './SignIn';
 import Register from './Register';
 import ForgotPassword from './ForgotPassword';
 import Profile from './Profile';
+import Drive from './Drive';
+import AdminDashboard from './AdminDashboard';
 export default function NavBar() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<SwiftyyLanding />} />
         <Route path="/signin" element={<SignIn />} />
-        <Route path="/profile" element={<SignIn />} />
-        <Route path="/register" element={<Profile />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/drive" element={<Drive />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
     </BrowserRouter>
