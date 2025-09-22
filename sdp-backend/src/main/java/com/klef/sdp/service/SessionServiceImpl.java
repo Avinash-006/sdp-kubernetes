@@ -76,7 +76,7 @@ public class SessionServiceImpl implements SessionService {
         FileEntity fileEntity = new FileEntity();
         fileEntity.setFileName(file.getOriginalFilename());
         fileEntity.setFileType(file.getContentType());
-        fileEntity.setData(file.getBytes());
+        fileEntity.setFileData(file.getBytes());
         fileEntity.setUser(user);
         fileEntity.setSession(session);
         FileEntity savedFile = fileRepository.save(fileEntity);

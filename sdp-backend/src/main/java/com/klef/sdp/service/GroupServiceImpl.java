@@ -1,9 +1,9 @@
 package com.klef.sdp.service;
 
 import com.klef.sdp.model.FileDTO;
+import com.klef.sdp.model.FileEntity;
 import com.klef.sdp.model.Group;
 import com.klef.sdp.model.Message;
-import com.klef.sdp.model.FileEntity;
 import com.klef.sdp.repository.GroupRepository;
 import com.klef.sdp.repository.MessageRepository;
 import com.klef.sdp.repository.UserRepository;

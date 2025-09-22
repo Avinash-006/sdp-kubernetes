@@ -28,7 +28,7 @@ public class FileServiceImpl implements FileService {
         FileEntity fileEntity = new FileEntity();
         fileEntity.setFileName(f.getOriginalFilename());
         fileEntity.setFileType(f.getContentType());
-        fileEntity.setData(f.getBytes());
+        fileEntity.setFileData(f.getBytes());
         fileEntity.setUser(user);
         return fileRepository.save(fileEntity);
     }

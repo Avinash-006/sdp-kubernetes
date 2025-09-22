@@ -37,7 +37,8 @@ public class FileController {
             return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(fileEntity.getFileType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileEntity.getFileName() + "\"")
-                .body(fileEntity.getData());
+                    .body(fileEntity.getFileData());
+
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }

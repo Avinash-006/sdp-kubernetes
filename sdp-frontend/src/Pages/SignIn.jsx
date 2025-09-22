@@ -182,7 +182,7 @@ export default function SignIn() {
             console.log('Admin user - Navigating to /admin-dashboard');
             navigate('/admin-dashboard', { replace: true });
           } else {
-            console.log('Regular user - Navigating to /pass-share');
+            console.log('Regular user - Navigating to /drive');
             navigate('/drive', { replace: true });
           }
         }, 800);
