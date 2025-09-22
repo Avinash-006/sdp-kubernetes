@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Camera, Mail, Lock, Bell, Shield, Download, Upload, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Camera, Mail, Lock, Bell, Shield, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 
-export const Profile = () => {
+const Profile = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,12 +49,9 @@ export const Profile = () => {
   const fetchUserData = async () => {
     try {
       setIsLoading(true);
-      // Assuming you have user ID stored in localStorage or context
       const userId = localStorage.getItem('userId') || 1; // Fallback to 1 for demo
-      
       const response = await axios.get(`${API_BASE_URL}/view/${userId}`);
       const user = response.data;
-      
       setUserData({
         id: user.id,
         username: user.username || '',
@@ -90,7 +87,6 @@ export const Profile = () => {
       return;
     }
 
-    // Create preview URL
     const newAvatar = URL.createObjectURL(file);
     setUserData((prev) => ({
       ...prev,
@@ -98,7 +94,6 @@ export const Profile = () => {
       profilePictureFile: file,
     }));
 
-    // Upload to backend
     await uploadProfilePicture(file);
   };
 
@@ -130,7 +125,6 @@ export const Profile = () => {
       } else {
         showNotification('error', 'Failed to upload profile picture');
       }
-      // Revert preview
       setUserData(prev => ({ ...prev, avatar: prev.profilePicture }));
     } finally {
       setIsUploading(false);
@@ -143,7 +137,6 @@ export const Profile = () => {
       return;
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userData.email)) {
       showNotification('error', 'Please enter a valid email address');
@@ -152,8 +145,6 @@ export const Profile = () => {
 
     try {
       setIsSaving(true);
-      
-      // Update user data
       const updateData = {
         id: userData.id,
         username: userData.username,
@@ -161,11 +152,9 @@ export const Profile = () => {
       };
 
       const response = await axios.put(`${API_BASE_URL}/update`, updateData);
-      
       if (response.data.includes('successfully')) {
         showNotification('success', 'Profile updated successfully!');
         setIsEditing(false);
-        // Update localStorage if needed
         localStorage.setItem('username', userData.username);
       } else {
         showNotification('error', response.data || 'Failed to update profile');
@@ -209,10 +198,7 @@ export const Profile = () => {
     }
 
     try {
-      // For password reset, you might want to use the forgot-password flow
-      // This is a simplified version - adjust based on your auth flow
       showNotification('success', 'Password updated successfully! (Demo)');
-      
       setPasswordData({
         currentPassword: '',
         newPassword: '',
@@ -224,7 +210,6 @@ export const Profile = () => {
     }
   };
 
-  // Password strength checker
   const getPasswordStrength = () => {
     if (!passwordData.newPassword) return { strength: 'empty', label: 'Enter password' };
     
@@ -243,15 +228,8 @@ export const Profile = () => {
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    // Reset scroll position
     document.querySelector('.tab-content')?.scrollTo(0, 0);
   };
-
-  const stats = [
-    { icon: Upload, label: 'Uploaded', value: '24', color: 'from-blue-500 to-purple-600' },
-    { icon: Download, label: 'Downloaded', value: '156', color: 'from-green-500 to-emerald-600' },
-    { icon: Shield, label: 'Protected Files', value: '18', color: 'from-orange-500 to-red-600' },
-  ];
 
   const tabs = [
     { id: 'general', label: 'General', icon: Mail },
@@ -299,7 +277,6 @@ export const Profile = () => {
         }
       `}</style>
 
-      {/* Alert Notification */}
       {showAlert.show && (
         <div className={`fixed top-4 right-4 z-50 animate-fade-in transition-all duration-300 ${
           showAlert.type === 'success' 
@@ -317,7 +294,6 @@ export const Profile = () => {
         </div>
       )}
 
-      {/* Navigation */}
       <nav className="border-b border-gray-200/50 backdrop-blur-sm bg-white/80 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -342,10 +318,8 @@ export const Profile = () => {
       </nav>
 
       <div className="max-w-6xl mx-auto p-6">
-        {/* Profile Header */}
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 rounded-3xl p-8 mb-8 animate-fade-in overflow-hidden">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-50 to-blue-50 p-8">
-            {/* Animated background pattern */}
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,#e0e7ff_0%,transparent_50%)]"></div>
               <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_75%_25%,#dbeafe_0%,transparent_50%)]"></div>
@@ -424,35 +398,12 @@ export const Profile = () => {
                     <span>{isEditing ? 'Save Changes' : 'Edit Profile'}</span>
                   )}
                 </button>
-                
-                <button className="px-8 py-4 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 hover:scale-105 transition-all duration-300 rounded-2xl font-semibold text-lg">
-                  Export Data
-                </button>
               </div>
-            </div>
-
-            {/* Enhanced Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-              {stats.map((stat, index) => (
-                <div 
-                  key={index} 
-                  className="group relative p-6 bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/50 hover:border-gray-300 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent transform group-hover:scale-110 transition-transform duration-300"></div>
-                  <div className="relative z-10">
-                    <stat.icon className={`h-10 w-10 mx-auto mb-4 text-transparent bg-clip-text bg-gradient-to-r ${stat.color} group-hover:scale-110 transition-transform duration-300`} />
-                    <p className="text-sm text-gray-600 mb-2 text-center font-medium">{stat.label}</p>
-                    <p className="text-3xl font-bold text-gray-900 text-center">{stat.value}</p>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
 
-        {/* Profile Settings */}
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden animate-slide-in">
-          {/* Enhanced Tabs */}
           <div className="flex border-b border-gray-200/50 bg-white/50">
             {tabs.map((tab, index) => (
               <button
@@ -473,7 +424,6 @@ export const Profile = () => {
             ))}
           </div>
 
-          {/* Tab Content */}
           <div className="tab-content p-8 max-h-[600px] overflow-y-auto">
             {activeTab === 'general' && (
               <div className="space-y-6 animate-fade-in">
@@ -605,7 +555,6 @@ export const Profile = () => {
                     />
                   </div>
 
-                  {/* Password Strength Indicator */}
                   {passwordData.newPassword && (
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
