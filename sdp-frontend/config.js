@@ -1,6 +1,6 @@
 const config = 
 {
-    "url":"http://localhost:8080"
+    "url":"http://10.46.2.12:8080"
 }
 
 export default config

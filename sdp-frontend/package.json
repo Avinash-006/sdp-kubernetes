@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
+    "@stomp/stompjs": "^7.2.0",
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
@@ -21,6 +22,7 @@
     "react-dom": "^19.1.0",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.9.1",
+    "sockjs-client": "^1.6.1",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.13"
   },

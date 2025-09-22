@@ -7,6 +7,7 @@ import ForgotPassword from './ForgotPassword';
 import Profile from './Profile';
 import Drive from './Drive';
 import AdminDashboard from './AdminDashboard';
+import PassShare from './PassShare';
 export default function NavBar() {
   return (
     <BrowserRouter>
@@ -18,6 +19,7 @@ export default function NavBar() {
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/drive" element={<Drive />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/pass-share" element={<PassShare />} />
       </Routes>
     </BrowserRouter>
   )
