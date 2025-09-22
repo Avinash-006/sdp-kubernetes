@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import SwiftyyLanding from './LandingPage';
 import SignIn from './SignIn';
@@ -8,9 +8,12 @@ import Profile from './Profile';
 import Drive from './Drive';
 import AdminDashboard from './AdminDashboard';
 import PassShare from './PassShare';
+import { Toaster } from 'react-hot-toast'; // Added Toaster import
+
 export default function NavBar() {
   return (
     <BrowserRouter>
+      <Toaster position="top-center" /> {/* Added Toaster component */}
       <Routes>
         <Route path="/" element={<SwiftyyLanding />} />
         <Route path="/signin" element={<SignIn />} />
@@ -22,5 +25,5 @@ export default function NavBar() {
         <Route path="/pass-share" element={<PassShare />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }

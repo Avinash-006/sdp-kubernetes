@@ -19,7 +19,6 @@ export default function SignIn() {
   const [showCaptchaError, setShowCaptchaError] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Generate initial CAPTCHA
   useEffect(() => {
     const generateCode = () => {
       const code = Math.floor(100 + Math.random() * 900).toString();
@@ -30,7 +29,6 @@ export default function SignIn() {
     generateCode();
   }, []);
 
-  // Load remember me preference
   useEffect(() => {
     const savedRememberMe = localStorage.getItem('rememberMe');
     const savedUser = localStorage.getItem('user');
@@ -53,7 +51,7 @@ export default function SignIn() {
     if (!captchaInput.trim()) {
       toast.error('Please enter the CAPTCHA code', {
         duration: 3000,
-        position: 'top-center'
+        position: 'top-center',
       });
       return;
     }
@@ -61,7 +59,6 @@ export default function SignIn() {
     setCaptchaLoading(true);
     setShowCaptchaError(false);
 
-    // Simulate brief verification delay
     await new Promise(resolve => setTimeout(resolve, 800));
 
     console.log('Verifying CAPTCHA:', { input: captchaInput, code: captchaCode });
@@ -71,7 +68,7 @@ export default function SignIn() {
       setShowCaptchaError(false);
       toast.success('CAPTCHA verified successfully! 👋', {
         duration: 3000,
-        position: 'top-center'
+        position: 'top-center',
       });
     } else {
       setShowCaptchaError(true);
@@ -79,7 +76,7 @@ export default function SignIn() {
       generateNewCaptcha();
       toast.error('Incorrect CAPTCHA. Please try again.', {
         duration: 4000,
-        position: 'top-center'
+        position: 'top-center',
       });
     }
 
@@ -88,7 +85,6 @@ export default function SignIn() {
 
   const handleInputChange = (field, value) => {
     if (field === 'captcha') {
-      // Allow only numbers for CAPTCHA
       const numericValue = value.replace(/[^0-9]/g, '');
       setCaptchaInput(numericValue);
     } else {
@@ -99,20 +95,19 @@ export default function SignIn() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Basic validation
+
     if (!usernameOrEmail.trim()) {
       toast.error('Please enter your username or email', {
         duration: 3000,
-        position: 'top-center'
+        position: 'top-center',
       });
       return;
     }
-    
+
     if (!password.trim()) {
       toast.error('Please enter your password', {
         duration: 3000,
-        position: 'top-center'
+        position: 'top-center',
       });
       return;
     }
@@ -120,13 +115,13 @@ export default function SignIn() {
     if (!captchaVerified) {
       toast.error('Please verify CAPTCHA first', {
         duration: 3000,
-        position: 'top-center'
+        position: 'top-center',
       });
       return;
     }
 
     setLoading(true);
-    
+
     try {
       const isEmail = usernameOrEmail.includes('@');
       const loginData = {
@@ -138,9 +133,7 @@ export default function SignIn() {
       console.log('Sending login request:', loginData);
 
       const response = await axios.post(`${config.url}/api/users/login`, loginData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         timeout: 15000,
       });
 
@@ -148,35 +141,31 @@ export default function SignIn() {
       console.log('Login response:', user);
 
       if (user && user.id && user.username) {
-        // Store user data
-        const userData = { 
-          id: user.id, 
-          username: user.username, 
+        const userData = {
+          id: user.id,
+          username: user.username,
           email: user.email,
-          isAdmin: user.admin || false 
+          isAdmin: user.admin || false,
         };
-        
+
         localStorage.setItem('user', JSON.stringify(userData));
-        
-        // Handle remember me
+
         if (rememberMe) {
           localStorage.setItem('rememberMe', 'true');
-          // Don't store password for security
           const rememberData = { username: usernameOrEmail.trim() };
           localStorage.setItem('rememberUser', JSON.stringify(rememberData));
         } else {
           localStorage.removeItem('rememberMe');
           localStorage.removeItem('rememberUser');
         }
-        
+
         console.log('Stored user in localStorage:', userData);
-        
+
         toast.success('Login successful! Welcome back 🎉', {
           duration: 4000,
-          position: 'top-center'
+          position: 'top-center',
         });
 
-        // Small delay for better UX
         setTimeout(() => {
           if (user.admin) {
             console.log('Admin user - Navigating to /admin-dashboard');
@@ -186,23 +175,26 @@ export default function SignIn() {
             navigate('/drive', { replace: true });
           }
         }, 800);
-        
       } else {
         throw new Error('Invalid user data received from server');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      
+      console.error('Login error details:', {
+        message: error.message,
+        response: error.response ? {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers,
+        } : 'No response',
+        code: error.code,
+      });
+
       let errorMessage = 'An unexpected error occurred during login';
-      
-      if (error.response) {
-        // Server responded with error status
-        const status = error.response.status;
-        const data = error.response.data;
-        
-        switch (status) {
+
+      if (error.response && typeof error.response.status === 'number') {
+        switch (error.response.status) {
           case 401:
-            errorMessage = 'Invalid username/email or password. Please try again.';
+            errorMessage = 'Invalid credentials. Please check your username/email and password.';
             break;
           case 403:
             errorMessage = 'Account access temporarily restricted. Please contact support.';
@@ -211,15 +203,7 @@ export default function SignIn() {
             errorMessage = 'Too many login attempts. Please wait 5 minutes before trying again.';
             break;
           default:
-            if (typeof data === 'string') {
-              errorMessage = data;
-            } else if (data && data.message) {
-              errorMessage = data.message;
-            } else if (data && data.error) {
-              errorMessage = data.error;
-            } else {
-              errorMessage = 'Login failed. Please try again.';
-            }
+            errorMessage = error.response.data?.message || error.response.data?.error || 'Login failed. Please try again.';
         }
       } else if (error.code === 'ECONNABORTED') {
         errorMessage = 'Login request timed out. Please check your connection and try again.';
@@ -231,8 +215,12 @@ export default function SignIn() {
 
       toast.error(errorMessage, {
         duration: 6000,
-        position: 'top-center'
+        position: 'top-center',
+        icon: <AlertCircle className="h-5 w-5" />,
       });
+
+      // Delay to ensure toast is visible
+      await new Promise(resolve => setTimeout(resolve, 1000));
     } finally {
       setLoading(false);
     }
@@ -242,7 +230,7 @@ export default function SignIn() {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (loading) return;
-      
+
       if (!captchaVerified) {
         verifyCaptcha();
       } else {
@@ -254,27 +242,12 @@ export default function SignIn() {
   return (
     <div className="min-h-screen bg-white text-black flex items-center justify-center p-4">
       <style jsx>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slide-up {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.8s ease-out forwards;
-        }
-        .animate-slide-up {
-          animation: slide-up 0.3s ease-out forwards;
-        }
-        @keyframes pulse-subtle {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.02); }
-        }
-        .pulse-subtle {
-          animation: pulse-subtle 2s ease-in-out infinite;
-        }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
+        .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
+        @keyframes pulse-subtle { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+        .pulse-subtle { animation: pulse-subtle 2s ease-in-out infinite; }
       `}</style>
 
       <motion.div
@@ -282,11 +255,10 @@ export default function SignIn() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full px-4 py-8 bg-gray-50 rounded-3xl shadow-lg animate-fade-in"
       >
-        {/* Header */}
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
           className="text-center mb-8 animate-slide-up"
         >
           <div className="inline-flex items-center justify-center w-16 h-16 bg-black rounded-full mb-4 mx-auto">
@@ -296,10 +268,8 @@ export default function SignIn() {
           <p className="text-gray-600">Sign in to your Swiftyy account securely</p>
         </motion.div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Username/Email Input */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -313,9 +283,7 @@ export default function SignIn() {
               onChange={(e) => handleInputChange('usernameOrEmail', e.target.value)}
               onKeyPress={handleKeyPress}
               className={`w-full pl-10 pr-4 py-3 border-2 rounded-full focus:outline-none focus:border-black transition-all duration-300 text-sm ${
-                loading 
-                  ? 'bg-gray-100 cursor-not-allowed' 
-                  : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
+                loading ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
               }`}
               required
               disabled={loading}
@@ -323,8 +291,7 @@ export default function SignIn() {
             />
           </motion.div>
 
-          {/* Password Input */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -338,9 +305,7 @@ export default function SignIn() {
               onChange={(e) => handleInputChange('password', e.target.value)}
               onKeyPress={handleKeyPress}
               className={`w-full pl-10 pr-10 py-3 border-2 rounded-full focus:outline-none focus:border-black transition-all duration-300 text-sm ${
-                loading 
-                  ? 'bg-gray-100 cursor-not-allowed' 
-                  : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
+                loading ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
               }`}
               required
               disabled={loading}
@@ -358,8 +323,7 @@ export default function SignIn() {
             </motion.button>
           </motion.div>
 
-          {/* CAPTCHA Section */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -370,23 +334,15 @@ export default function SignIn() {
                 <Shield className="h-4 w-4 mr-2 text-gray-500" />
                 Verify you're not a bot
               </p>
-              
-              {/* CAPTCHA Display */}
-              <motion.div 
+              <motion.div
                 initial={false}
-                animate={{ 
-                  scale: captchaVerified ? [1, 1.05, 1] : 1 
-                }}
+                animate={{ scale: captchaVerified ? [1, 1.05, 1] : 1 }}
                 transition={{ duration: 0.3 }}
                 className={`inline-flex items-center justify-center bg-gray-200 p-3 rounded-lg transition-all duration-300 ${
-                  captchaVerified 
-                    ? 'bg-green-100 border-2 border-green-200' 
-                    : 'hover:bg-gray-300'
+                  captchaVerified ? 'bg-green-100 border-2 border-green-200' : 'hover:bg-gray-300'
                 }`}
               >
-                <span className={`text-lg font-mono font-bold text-black ${
-                  captchaVerified ? 'text-green-700' : ''
-                }`}>
+                <span className={`text-lg font-mono font-bold text-black ${captchaVerified ? 'text-green-700' : ''}`}>
                   {captchaVerified ? (
                     <>
                       <CheckCircle className="h-5 w-5 inline mr-2" />
@@ -399,9 +355,8 @@ export default function SignIn() {
               </motion.div>
             </div>
 
-            {/* CAPTCHA Input - Only show if not verified */}
             {!captchaVerified && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 className="space-y-3 animate-slide-up"
@@ -415,11 +370,7 @@ export default function SignIn() {
                     onKeyPress={handleKeyPress}
                     maxLength={3}
                     className={`w-full pl-4 pr-12 py-3 border-2 rounded-full focus:outline-none focus:border-blue-500 transition-all duration-300 text-sm text-center font-mono tracking-wider uppercase ${
-                      showCaptchaError 
-                        ? 'border-red-300 bg-red-50' 
-                        : loading 
-                        ? 'bg-gray-100 cursor-not-allowed' 
-                        : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
+                      showCaptchaError ? 'border-red-300 bg-red-50' : loading ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
                     }`}
                     disabled={captchaLoading || loading}
                   />
@@ -434,7 +385,7 @@ export default function SignIn() {
                     <RefreshCw className="h-4 w-4" />
                   </motion.button>
                 </div>
-                
+
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -461,7 +412,7 @@ export default function SignIn() {
                 </motion.button>
 
                 {showCaptchaError && (
-                  <motion.p 
+                  <motion.p
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="text-red-600 text-xs flex items-center justify-center space-x-1"
@@ -474,8 +425,7 @@ export default function SignIn() {
             )}
           </motion.div>
 
-          {/* Remember Me & Forgot Password */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -491,8 +441,8 @@ export default function SignIn() {
               />
               <span className="hover:text-gray-800 transition-colors">Remember me</span>
             </label>
-            <Link 
-              to="/forgot-password" 
+            <Link
+              to="/forgot-password"
               className="text-black hover:text-gray-600 font-medium hover:underline transition-colors duration-200"
               disabled={loading}
             >
@@ -500,7 +450,6 @@ export default function SignIn() {
             </Link>
           </motion.div>
 
-          {/* Submit Button */}
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -529,8 +478,7 @@ export default function SignIn() {
           </motion.button>
         </form>
 
-        {/* Footer Links */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
@@ -538,44 +486,43 @@ export default function SignIn() {
         >
           <p className="text-gray-600 text-sm">
             Don't have an account?{' '}
-            <Link 
-              to="/register" 
-              className="text-black font-medium hover:underline transition-colors duration-200"
-            >
+            <Link to="/register" className="text-black font-medium hover:underline transition-colors duration-200">
               Create one here
             </Link>
           </p>
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-flex items-center text-gray-600 hover:text-black text-sm font-medium hover:underline transition-colors duration-200"
           >
             ← Back to Home
           </Link>
         </motion.div>
 
-        {/* Development Mode Demo Credentials */}
         {process.env.NODE_ENV === 'development' && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
             className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-xl"
           >
-            
+            <p className="text-sm text-blue-800">
+              Demo Credentials (Dev Mode): <br />
+              Username: testuser | Password: Test@123
+            </p>
           </motion.div>
         )}
       </motion.div>
 
-      {/* Custom Toast Styling */}
       <style jsx global>{`
-        .react-hot-toast {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
+        .react-hot-toast { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         .react-hot-toast .Toastify__toast {
           padding: 12px 16px;
           border-radius: 12px;
           font-weight: 500;
           backdrop-filter: blur(10px);
+          min-height: 60px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          z-index: 9999; /* Ensure it appears above other elements */
         }
         .react-hot-toast .Toastify__toast--success {
           background: linear-gradient(135deg, #10b981 0%, #059669 100%);
