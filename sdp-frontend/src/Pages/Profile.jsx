@@ -46,7 +46,7 @@ const Profile = () => {
   const fetchUserData = async () => {
     try {
       setIsLoading(true);
-      const userId = localStorage.getItem('userId') || 1; // Fallback to 1 for demo
+      const userId = localStorage.getItem('id') || 1; // Fallback to 1 for demo
       const response = await axios.get(`${API_BASE_URL}/view/${userId}`);
       const user = response.data;
       setUserData({
