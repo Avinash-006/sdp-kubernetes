@@ -12,7 +12,7 @@ const Profile = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showAlert, setShowAlert] = useState({ type: '', message: '', show: false });
   const navigate = useNavigate();
-  
+
   const [userData, setUserData] = useState({
     id: null,
     username: '',
@@ -20,6 +20,7 @@ const Profile = () => {
     avatar: null,
     profilePicture: null,
     userId: null,
+    isAdmin: false,
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -28,7 +29,6 @@ const Profile = () => {
     confirmNewPassword: '',
   });
 
-  // Use the URL from config.js
   const API_BASE_URL = `${config.url}/api/users`;
 
   // Password validation regex patterns
@@ -40,25 +40,47 @@ const Profile = () => {
 
   // Fetch user data on component mount
   useEffect(() => {
-    fetchUserData();
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      navigate('/signin');
+      return;
+    }
+    fetchUserData(userId);
   }, []);
 
-  const fetchUserData = async () => {
+  const fetchUserData = async (userId) => {
     try {
       setIsLoading(true);
-      const userId = localStorage.getItem('id') || 1; // Fallback to 1 for demo
-      const response = await axios.get(`${API_BASE_URL}/view/${userId}`);
-      const user = response.data;
-      setUserData({
-        id: user.id,
-        username: user.username || '',
-        email: user.email || '',
-        userId: user.id,
-        profilePicture: user.profilePicture ? `data:image/jpeg;base64,${user.profilePicture}` : null,
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/view/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+
+      const user = response.data;
+      const newUserData = {
+        id: user.id ? user.id : 3,
+        username: user.username ? user.username : 'Avinash06',
+        email: user.email ? user.email : 'avinashdola0@gmail.com',
+        userId: user.id ? user.id : 3,
+        isAdmin: user.isAdmin !== undefined ? user.isAdmin : false,
+        profilePicture: user.profilePicture ? `data:image/jpeg;base64,${user.profilePicture}` : null,
+      };
+      setUserData(newUserData);
+      localStorage.setItem('username', newUserData.username);
     } catch (error) {
       console.error('Error fetching user data:', error);
       showNotification('error', 'Failed to load profile data');
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('userId');
+        localStorage.removeItem('token');
+        navigate('/signin');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -105,19 +127,25 @@ const Profile = () => {
 
     try {
       setIsUploading(true);
-      const response = await axios.post(
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      await axios.post(
         `${API_BASE_URL}/update-profile-picture/${userData.id}`,
         formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
           },
         }
       );
       showNotification('success', 'Profile picture updated successfully!');
     } catch (error) {
       console.error('Upload error:', error);
-      if (error.response?.status === 400) {
+      if (error.response && error.response.status === 400) {
         showNotification('error', error.response.data);
       } else {
         showNotification('error', 'Failed to upload profile picture');
@@ -142,24 +170,39 @@ const Profile = () => {
 
     try {
       setIsSaving(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       const updateData = {
         id: userData.id,
         username: userData.username,
         email: userData.email,
+        isAdmin: userData.isAdmin,
       };
 
-      const response = await axios.put(`${API_BASE_URL}/update`, updateData);
+      const response = await axios.put(`${API_BASE_URL}/update`, updateData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       if (response.data.includes('successfully')) {
         showNotification('success', 'Profile updated successfully!');
         setIsEditing(false);
         localStorage.setItem('username', userData.username);
       } else {
-        showNotification('error', response.data || 'Failed to update profile');
+        showNotification('error', response.data ? response.data : 'Failed to update profile');
       }
     } catch (error) {
       console.error('Update error:', error);
-      if (error.response?.status === 409) {
+      if (error.response && error.response.status === 409) {
         showNotification('error', error.response.data);
+      } else if (error.response && error.response.status === 401) {
+        localStorage.removeItem('userId');
+        localStorage.removeItem('token');
+        navigate('/signin');
       } else {
         showNotification('error', 'Failed to update profile');
       }
@@ -183,7 +226,7 @@ const Profile = () => {
     const hasNumber = passwordRegex.hasNumber.test(passwordData.newPassword);
     const hasSpecialChar = passwordRegex.hasSpecialChar.test(passwordData.newPassword);
     const hasUppercase = passwordRegex.hasUppercase.test(passwordData.newPassword);
-    
+
     if (
       passwordData.newPassword.length < minLength ||
       !hasNumber ||
@@ -195,10 +238,18 @@ const Profile = () => {
     }
 
     try {
-      // Use the API endpoint from config
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       const response = await axios.put(`${API_BASE_URL}/update-password/${userData.id}`, {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (response.data.success) {
@@ -209,14 +260,17 @@ const Profile = () => {
           confirmNewPassword: '',
         });
       } else {
-        showNotification('error', response.data.message || 'Failed to update password');
+        showNotification('error', response.data.message ? response.data.message : 'Failed to update password');
       }
     } catch (error) {
       console.error('Password update error:', error);
-      if (error.response?.status === 401) {
+      if (error.response && error.response.status === 401) {
         showNotification('error', 'Current password is incorrect');
-      } else if (error.response?.status === 400) {
-        showNotification('error', error.response.data.message || 'Invalid password format');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('token');
+        navigate('/signin');
+      } else if (error.response && error.response.status === 400) {
+        showNotification('error', error.response.data.message ? error.response.data.message : 'Invalid password format');
       } else {
         showNotification('error', 'Failed to update password');
       }
@@ -225,7 +279,7 @@ const Profile = () => {
 
   const getPasswordStrength = () => {
     if (!passwordData.newPassword) return { strength: 'empty', label: 'Enter password' };
-    
+
     const length = passwordData.newPassword.length >= 8;
     const hasNumber = passwordRegex.hasNumber.test(passwordData.newPassword);
     const hasSpecialChar = passwordRegex.hasSpecialChar.test(passwordData.newPassword);
@@ -241,7 +295,17 @@ const Profile = () => {
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    document.querySelector('.tab-content')?.scrollTo(0, 0);
+    const tabContent = document.querySelector('.tab-content');
+    if (tabContent) {
+      tabContent.scrollTo(0, 0);
+    }
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    navigate('/signin');
   };
 
   const tabs = [
@@ -323,7 +387,7 @@ const Profile = () => {
                 <span>Drive</span>
               </button>
               <button
-                onClick={() => navigate("/signin")}
+                onClick={handleSignOut}
                 className="bg-black text-white hover:bg-gray-800 hover:scale-110 hover:shadow-xl transition-all duration-300 ease-out rounded-full px-6 py-2 font-medium flex items-center space-x-2"
               >
                 <span>Sign Out</span>
@@ -349,7 +413,7 @@ const Profile = () => {
                     : 'border-gray-200 hover:border-black/50 group-hover:border-blue-300'
                 } transition-all duration-300 bg-gradient-to-br from-white to-gray-50 shadow-lg`}>
                   <img
-                    src={userData.avatar || userData.profilePicture || '/api/placeholder/144/144?text=👤'}
+                    src={userData.avatar ? userData.avatar : userData.profilePicture ? userData.profilePicture : '/api/placeholder/144/144?text=👤'}
                     alt="Profile"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
@@ -381,10 +445,13 @@ const Profile = () => {
               
               <div className="flex-1 text-center lg:text-left lg:ml-8">
                 <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  {userData.username || 'User'}
+                  {userData.username}
                 </h1>
                 <p className="text-gray-600 text-xl mb-1">{userData.email}</p>
                 <p className="text-gray-500 text-sm">Member since 2024</p>
+                {userData.isAdmin && (
+                  <p className="text-blue-600 text-sm font-semibold">Administrator</p>
+                )}
               </div>
               
               <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
