@@ -498,19 +498,7 @@ export default function SignIn() {
           </Link>
         </motion.div>
 
-        {process.env.NODE_ENV === 'development' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-xl"
-          >
-            <p className="text-sm text-blue-800">
-              Demo Credentials (Dev Mode): <br />
-              Username: testuser | Password: Test@123
-            </p>
-          </motion.div>
-        )}
+        
       </motion.div>
 
       <style jsx global>{`
