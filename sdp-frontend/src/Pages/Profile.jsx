@@ -40,7 +40,7 @@ const Profile = () => {
 
   // Fetch user data on component mount
   useEffect(() => {
-    const userId = localStorage.getItem('userId');
+    const userId = localStorage.getItem('id');
     if (!userId) {
       navigate('/signin');
       return;
