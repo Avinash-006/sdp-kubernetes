@@ -12,7 +12,6 @@ const Profile = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showAlert, setShowAlert] = useState({ type: '', message: '', show: false });
   const navigate = useNavigate();
-
   const [userData, setUserData] = useState({
     id: null,
     username: '',
@@ -22,13 +21,11 @@ const Profile = () => {
     userId: null,
     isAdmin: false,
   });
-
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmNewPassword: '',
   });
-
   const API_BASE_URL = `${config.url}/api/users`;
 
   // Password validation regex patterns
@@ -43,22 +40,22 @@ const Profile = () => {
     const userId = localStorage.getItem('id');
     const token = localStorage.getItem('token');
     if (!userId || !token) {
+      console.warn('Missing userId or token in localStorage:', { userId, token });
       showNotification('error', 'Please sign in to view your profile');
       navigate('/signin');
       return;
     }
-    fetchUserData(userId);
+    fetchUserData(userId, token);
   }, []);
 
-  const fetchUserData = async (userId) => {
+  const fetchUserData = async (userId, token) => {
     try {
       setIsLoading(true);
       const response = await axios.get(`${API_BASE_URL}/view/${userId}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-
       const user = response.data;
       const newUserData = {
         id: user.id,
@@ -71,8 +68,8 @@ const Profile = () => {
       setUserData(newUserData);
       localStorage.setItem('username', newUserData.username);
     } catch (error) {
-      console.error('Error fetching user data:', error);
-      showNotification('error', 'Failed to load profile data');
+      console.error('Error fetching user data:', error.response?.data || error.message);
+      showNotification('error', 'Failed to load profile data. Using cached data.');
       setUserData({
         id: 3,
         username: 'Avinash06',
@@ -81,7 +78,9 @@ const Profile = () => {
         isAdmin: false,
         profilePicture: null,
       });
-      if (error.response && error.response.status === 401) {
+      if (error.response?.status === 401) {
+        console.warn('Unauthorized access, token may be invalid or expired');
+        showNotification('error', 'Session expired. Please sign in again.');
         localStorage.removeItem('id');
         localStorage.removeItem('token');
         localStorage.removeItem('username');
@@ -100,25 +99,21 @@ const Profile = () => {
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       showNotification('error', 'Please upload a valid image (JPEG, PNG, GIF, or WebP)');
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
       showNotification('error', 'Profile picture must be less than 5MB');
       return;
     }
-
     const newAvatar = URL.createObjectURL(file);
     setUserData((prev) => ({
       ...prev,
       avatar: newAvatar,
       profilePictureFile: file,
     }));
-
     await uploadProfilePicture(file);
   };
 
@@ -127,10 +122,8 @@ const Profile = () => {
       showNotification('error', 'User ID not found');
       return;
     }
-
     const formData = new FormData();
     formData.append('profilePicture', file);
-
     try {
       setIsUploading(true);
       const token = localStorage.getItem('token');
@@ -139,7 +132,6 @@ const Profile = () => {
         navigate('/signin');
         return;
       }
-
       await axios.post(
         `${API_BASE_URL}/update-profile-picture/${userData.id}`,
         formData,
@@ -151,12 +143,12 @@ const Profile = () => {
         }
       );
       showNotification('success', 'Profile picture updated successfully!');
-      fetchUserData(userData.id); // Refresh user data after upload
+      fetchUserData(userData.id, token); // Refresh user data after upload
     } catch (error) {
-      console.error('Upload error:', error);
-      if (error.response && error.response.status === 400) {
+      console.error('Upload error:', error.response?.data || error.message);
+      if (error.response?.status === 400) {
         showNotification('error', error.response.data.message || 'Failed to upload profile picture');
-      } else if (error.response && error.response.status === 401) {
+      } else if (error.response?.status === 401) {
         showNotification('error', 'Session expired. Please sign in again.');
         localStorage.removeItem('id');
         localStorage.removeItem('token');
@@ -176,13 +168,11 @@ const Profile = () => {
       showNotification('error', 'Username and email cannot be empty');
       return;
     }
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userData.email)) {
       showNotification('error', 'Please enter a valid email address');
       return;
     }
-
     try {
       setIsSaving(true);
       const token = localStorage.getItem('token');
@@ -191,33 +181,30 @@ const Profile = () => {
         navigate('/signin');
         return;
       }
-
       const updateData = {
         id: userData.id,
         username: userData.username,
         email: userData.email,
         isAdmin: userData.isAdmin,
       };
-
       const response = await axios.put(`${API_BASE_URL}/update`, updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
       if (response.data.includes('successfully')) {
         showNotification('success', 'Profile updated successfully!');
         setIsEditing(false);
         localStorage.setItem('username', userData.username);
-        fetchUserData(userData.id); // Refresh user data after save
+        fetchUserData(userData.id, token); // Refresh user data after save
       } else {
         showNotification('error', response.data.message || 'Failed to update profile');
       }
     } catch (error) {
-      console.error('Update error:', error);
-      if (error.response && error.response.status === 409) {
+      console.error('Update error:', error.response?.data || error.message);
+      if (error.response?.status === 409) {
         showNotification('error', error.response.data.message || 'Profile update conflict');
-      } else if (error.response && error.response.status === 401) {
+      } else if (error.response?.status === 401) {
         showNotification('error', 'Session expired. Please sign in again.');
         localStorage.removeItem('id');
         localStorage.removeItem('token');
@@ -236,17 +223,14 @@ const Profile = () => {
       showNotification('error', 'All password fields are required');
       return;
     }
-
     if (passwordData.newPassword !== passwordData.confirmNewPassword) {
       showNotification('error', 'New password and confirmation do not match');
       return;
     }
-
     const minLength = 8;
     const hasNumber = passwordRegex.hasNumber.test(passwordData.newPassword);
     const hasSpecialChar = passwordRegex.hasSpecialChar.test(passwordData.newPassword);
     const hasUppercase = passwordRegex.hasUppercase.test(passwordData.newPassword);
-
     if (
       passwordData.newPassword.length < minLength ||
       !hasNumber ||
@@ -256,7 +240,6 @@ const Profile = () => {
       showNotification('error', 'New password must be at least 8 characters, include uppercase, number, and special character');
       return;
     }
-
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -264,7 +247,6 @@ const Profile = () => {
         navigate('/signin');
         return;
       }
-
       const response = await axios.put(`${API_BASE_URL}/update-password/${userData.id}`, {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
@@ -273,7 +255,6 @@ const Profile = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-
       if (response.data.success) {
         showNotification('success', 'Password updated successfully!');
         setPasswordData({
@@ -285,14 +266,14 @@ const Profile = () => {
         showNotification('error', response.data.message || 'Failed to update password');
       }
     } catch (error) {
-      console.error('Password update error:', error);
-      if (error.response && error.response.status === 401) {
+      console.error('Password update error:', error.response?.data || error.message);
+      if (error.response?.status === 401) {
         showNotification('error', 'Current password is incorrect or session expired');
         localStorage.removeItem('id');
         localStorage.removeItem('token');
         localStorage.removeItem('username');
         navigate('/signin');
-      } else if (error.response && error.response.status === 400) {
+      } else if (error.response?.status === 400) {
         showNotification('error', error.response.data.message || 'Invalid password format');
       } else {
         showNotification('error', 'Failed to update password');
@@ -302,15 +283,12 @@ const Profile = () => {
 
   const getPasswordStrength = () => {
     if (!passwordData.newPassword) return { strength: 'empty', label: 'Enter password' };
-
     const length = passwordData.newPassword.length >= 8;
     const hasNumber = passwordRegex.hasNumber.test(passwordData.newPassword);
     const hasSpecialChar = passwordRegex.hasSpecialChar.test(passwordData.newPassword);
     const hasUppercase = passwordRegex.hasUppercase.test(passwordData.newPassword);
-
     const checks = [length, hasNumber, hasSpecialChar, hasUppercase];
     const passed = checks.filter(Boolean).length;
-
     if (passed === 4) return { strength: 'strong', label: 'Strong' };
     if (passed >= 2) return { strength: 'medium', label: 'Medium' };
     return { strength: 'weak', label: 'Weak' };
@@ -373,11 +351,10 @@ const Profile = () => {
           animation: pulse-glow 2s infinite;
         }
       `}</style>
-
       {showAlert.show && (
         <div className={`fixed top-4 right-4 z-50 animate-fade-in transition-all duration-300 ${
-          showAlert.type === 'success' 
-            ? 'bg-green-500' 
+          showAlert.type === 'success'
+            ? 'bg-green-500'
             : 'bg-red-500'
         } text-white px-6 py-4 rounded-2xl shadow-2xl max-w-sm`}>
           <div className="flex items-center space-x-3">
@@ -390,7 +367,6 @@ const Profile = () => {
           </div>
         </div>
       )}
-
       <nav className="border-b border-gray-200/50 backdrop-blur-sm bg-white/80 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -419,7 +395,6 @@ const Profile = () => {
           </div>
         </div>
       </nav>
-
       <div className="max-w-6xl mx-auto p-6">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 rounded-3xl p-8 mb-8 animate-fade-in overflow-hidden">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-50 to-blue-50 p-8">
@@ -427,12 +402,11 @@ const Profile = () => {
               <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,#e0e7ff_0%,transparent_50%)]"></div>
               <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_75%_25%,#dbeafe_0%,transparent_50%)]"></div>
             </div>
-            
             <div className="relative z-10 flex flex-col lg:flex-row items-center space-y-8 lg:space-y-0 lg:space-x-12">
               <div className="relative group">
                 <div className={`w-36 h-36 rounded-full overflow-hidden border-4 ${
-                  isUploading 
-                    ? 'border-blue-300 animate-pulse' 
+                  isUploading
+                    ? 'border-blue-300 animate-pulse'
                     : 'border-gray-200 hover:border-black/50 group-hover:border-blue-300'
                 } transition-all duration-300 bg-gradient-to-br from-white to-gray-50 shadow-lg`}>
                   <img
@@ -446,7 +420,6 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
-                
                 <input
                   type="file"
                   accept="image/*"
@@ -465,7 +438,6 @@ const Profile = () => {
                   <Camera className="h-4 w-4" />
                 </label>
               </div>
-              
               <div className="flex-1 text-center lg:text-left lg:ml-8">
                 <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                   {userData.username}
@@ -476,7 +448,6 @@ const Profile = () => {
                   <p className="text-blue-600 text-sm font-semibold">Administrator</p>
                 )}
               </div>
-              
               <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                 <button
                   onClick={() => {
@@ -488,10 +459,10 @@ const Profile = () => {
                   }}
                   disabled={isSaving}
                   className={`px-8 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 flex items-center space-x-3 ${
-                    isEditing 
-                      ? isSaving 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:scale-105' 
+                    isEditing
+                      ? isSaving
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:scale-105'
                       : 'border-2 border-black hover:bg-black hover:text-white'
                   }`}
                 >
@@ -508,7 +479,6 @@ const Profile = () => {
             </div>
           </div>
         </div>
-
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden animate-slide-in">
           <div className="flex border-b border-gray-200/50 bg-white/50">
             {tabs.map((tab, index) => (
@@ -517,7 +487,7 @@ const Profile = () => {
                 onClick={() => handleTabChange(tab.id)}
                 className={`relative flex-1 flex items-center justify-center space-x-3 px-6 py-6 transition-all duration-300 group ${
                   activeTab === tab.id
-                    ? 'bg-gradient-to-r from-black to-gray-900 text-white' 
+                    ? 'bg-gradient-to-r from-black to-gray-900 text-white'
                     : 'text-gray-600 hover:text-black hover:bg-gray-50/50'
                 }`}
               >
@@ -529,7 +499,6 @@ const Profile = () => {
               </button>
             ))}
           </div>
-
           <div className="tab-content p-8 max-h-[600px] overflow-y-auto">
             {activeTab === 'profile' && (
               <div className="space-y-8 animate-fade-in">
@@ -552,7 +521,6 @@ const Profile = () => {
                       placeholder="Enter your username"
                     />
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
                       <Mail className="h-4 w-4 text-gray-500" />
@@ -569,7 +537,6 @@ const Profile = () => {
                       placeholder="Enter your email"
                     />
                   </div>
-
                   <div className="pt-4">
                     <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
                       <span>Bio</span>
@@ -582,7 +549,6 @@ const Profile = () => {
                     />
                   </div>
                 </div>
-
                 {/* Security Section */}
                 <div className="space-y-4">
                   <div className="text-center py-4">
@@ -592,7 +558,6 @@ const Profile = () => {
                       Update your password to keep your account secure. We recommend using a strong, unique password.
                     </p>
                   </div>
-
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -608,7 +573,6 @@ const Profile = () => {
                         placeholder="Enter current password"
                       />
                     </div>
-                    
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-3">
                         New Password
@@ -623,7 +587,6 @@ const Profile = () => {
                         placeholder="Create a new password"
                       />
                     </div>
-                    
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-3">
                         Confirm New Password
@@ -638,15 +601,14 @@ const Profile = () => {
                         placeholder="Confirm new password"
                       />
                     </div>
-
                     {passwordData.newPassword && (
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                           <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className={`h-full rounded-full transition-all duration-300 ${
                                 passwordStrength.strength === 'strong'
-                                  ? 'bg-green-500' 
+                                  ? 'bg-green-500'
                                   : passwordStrength.strength === 'medium'
                                   ? 'bg-yellow-500'
                                   : 'bg-red-500'
@@ -681,7 +643,6 @@ const Profile = () => {
                         </div>
                       </div>
                     )}
-
                     <button
                       onClick={handlePasswordUpdate}
                       disabled={!passwordData.newPassword || passwordData.newPassword !== passwordData.confirmNewPassword}
@@ -695,7 +656,6 @@ const Profile = () => {
                       <span>Update Password</span>
                     </button>
                   </div>
-
                   <div className="pt-4 border-t border-gray-200">
                     <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1">
                       <span>Forgot Password?</span>
@@ -703,7 +663,6 @@ const Profile = () => {
                     </button>
                   </div>
                 </div>
-
                 {isEditing && (
                   <button
                     onClick={handleSave}
