@@ -9,10 +9,10 @@ import config from '../../config';
 export default function ForgotPassword() {
   const navigate = useNavigate();
   const otpRefs = useRef([]);
-  const [step, setStep] = useState(1); // 1: Email, 2: OTP Entry, 3: New Password
+  const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']); // Individual OTP digits
-  const [enteredOtp, setEnteredOtp] = useState(''); // Complete OTP string
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [enteredOtp, setEnteredOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -31,12 +31,11 @@ export default function ForgotPassword() {
     hasLowercase: false,
     hasNumber: false,
     hasSpecialChar: false,
-    minLength: false
+    minLength: false,
   });
 
-  // Start OTP timer
   const startTimer = () => {
-    setOtpTimer(120); // 2 minutes
+    setOtpTimer(120);
     const timer = setInterval(() => {
       setOtpTimer((prev) => {
         if (prev <= 1) {
@@ -48,7 +47,6 @@ export default function ForgotPassword() {
     }, 1000);
   };
 
-  // Email validation
   const validateEmail = (value) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!value) {
@@ -64,8 +62,7 @@ export default function ForgotPassword() {
   };
 
   // OTP validation
-  const validateOtp = () => {
-    const otpString = otp.join('');
+  const validateOtp = (otpString) => {
     if (!otpString || otpString.length !== 6) {
       setOtpError('Please enter a complete 6-digit OTP');
       return false;
@@ -95,7 +92,7 @@ export default function ForgotPassword() {
       hasLowercase,
       hasNumber,
       hasSpecialChar,
-      minLength
+      minLength,
     });
 
     if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecialChar || !minLength) {
@@ -125,28 +122,21 @@ export default function ForgotPassword() {
     const newOtp = [...otp];
     newOtp[index] = numericValue;
     setOtp(newOtp);
-    setEnteredOtp(newOtp.join(''));
-
-    // Clear error when user starts typing
-    if (otpError) setOtpError('');
+    setEnteredOtp(newOtp.join('')); // Sync enteredOtp with otp array
+    setOtpError(''); // Clear error on input change
 
     // Auto-focus next input
     if (numericValue && index < 5) {
-      setTimeout(() => otpRefs.current[index + 1]?.focus(), 10);
-    }
-
-    // Auto-submit when all 6 digits are entered
-    if (newOtp.every(digit => digit !== '') && index === 5) {
-      setTimeout(() => handleOtpSubmit({ preventDefault: () => {} }), 300);
+      setTimeout(() => otpRefs.current[index + 1]?.focus(), 50);
     }
   };
 
   const handleOtpKeyDown = (index, e) => {
     // Backspace handling
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      setTimeout(() => otpRefs.current[index - 1]?.focus(), 10);
+      setTimeout(() => otpRefs.current[index - 1]?.focus(), 50);
     }
-    
+
     // Arrow keys
     if (e.key === 'ArrowLeft' && index > 0) {
       e.preventDefault();
@@ -156,11 +146,11 @@ export default function ForgotPassword() {
       e.preventDefault();
       otpRefs.current[index + 1]?.focus();
     }
-    
+
     // Paste handling
     if (e.key === 'v' && e.ctrlKey) {
       e.preventDefault();
-      navigator.clipboard.readText().then(text => {
+      navigator.clipboard.readText().then((text) => {
         const pastedData = text.replace(/\D/g, '').slice(0, 6);
         const newOtp = [...otp];
         for (let i = 0; i < Math.min(pastedData.length, 6 - index); i++) {
@@ -168,15 +158,11 @@ export default function ForgotPassword() {
         }
         setOtp(newOtp);
         setEnteredOtp(newOtp.join(''));
-        
+        setOtpError('');
+
         const lastFilledIndex = Math.min(index + pastedData.length - 1, 5);
-        if (lastFilledIndex < 5) {
-          setTimeout(() => otpRefs.current[lastFilledIndex + 1]?.focus(), 10);
-        } else if (newOtp.every(digit => digit !== '')) {
-          setTimeout(() => handleOtpSubmit({ preventDefault: () => {} }), 300);
-        }
+        setTimeout(() => otpRefs.current[lastFilledIndex]?.focus(), 50);
       }).catch(() => {
-        // Fallback for older browsers
         const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
         const newOtp = [...otp];
         for (let i = 0; i < Math.min(pastedData.length, 6 - index); i++) {
@@ -184,6 +170,7 @@ export default function ForgotPassword() {
         }
         setOtp(newOtp);
         setEnteredOtp(newOtp.join(''));
+        setOtpError('');
       });
     }
   };
@@ -211,61 +198,48 @@ export default function ForgotPassword() {
     }
   };
 
-  // FIXED: Simplified email submission - just send OTP
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
-    
     setEmailError('');
     setGeneralError('');
     setOtpError('');
-    
+
     if (!validateEmail(email)) {
       toast.error('Please enter a valid email address', {
         duration: 4000,
-        position: 'top-center'
+        position: 'top-center',
       });
       return;
     }
 
     setLoading(true);
-    
     try {
       console.log('Sending OTP to:', email);
-      
-      // Reset OTP state
       setOtp(['', '', '', '', '', '']);
       setEnteredOtp('');
-      
-      const response = await axios.post(
+
+      await axios.post(
         `${config.url}/api/users/forgot-password`,
         null,
         {
           params: { email },
           headers: { 'Content-Type': 'application/json' },
-          timeout: 60000, // 60 seconds
+          timeout: 60000,
         }
       );
 
-      console.log('OTP sent:', response.data);
-      
       toast.success('Verification code sent! Check your email (including spam folder).', {
         duration: 5000,
-        position: 'top-center'
+        position: 'top-center',
       });
-      
+
       setStep(2);
       startTimer();
-      
-      // Focus first OTP input after short delay
-      setTimeout(() => {
-        otpRefs.current[0]?.focus();
-      }, 500);
-      
+      setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch (error) {
       console.error('Send OTP error:', error);
-      
       let errorMessage = 'Failed to send verification code.';
-      
+
       if (error.response?.status === 404) {
         errorMessage = 'Email not found. Please check and try again.';
         setEmailError('Email not registered');
@@ -283,62 +257,53 @@ export default function ForgotPassword() {
       setGeneralError(errorMessage);
       toast.error(errorMessage, {
         duration: 6000,
-        position: 'top-center'
+        position: 'top-center',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  // FIXED: OTP entry - just collect the code, no verification call needed
-  const handleOtpSubmit = (e) => {
+  const handleOtpSubmit = async (e) => {
     e.preventDefault();
-    
     setOtpError('');
     setGeneralError('');
-    
-    if (!validateOtp()) {
+
+    const otpString = enteredOtp;
+    if (!validateOtp(otpString)) {
       toast.error('Please enter a complete 6-digit code', {
         duration: 4000,
-        position: 'top-center'
+        position: 'top-center',
       });
       return;
     }
 
-    const otpString = enteredOtp;
     console.log('OTP entered:', otpString);
-    
-    // Store the entered OTP and proceed to password step
-    // The actual verification happens during password reset
     toast.success('Code accepted! Now create your new password.', {
       duration: 3000,
-      position: 'top-center'
+      position: 'top-center',
     });
-    
+
     setStep(3);
-    
-    // Focus password input
     setTimeout(() => {
       const passwordInput = document.querySelector('input[type="password"]');
       passwordInput?.focus();
-    }, 300);
+    }, 100);
   };
 
-  // FIXED: Single password reset call with all parameters
   const handlePasswordReset = async (e) => {
     e.preventDefault();
-    
     setPasswordError('');
     setConfirmPasswordError('');
     setGeneralError('');
-    
+
     const isPasswordValid = validatePassword(newPassword);
     const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
 
     if (!isPasswordValid || !isConfirmPasswordValid) {
       toast.error('Please fix the password errors above', {
         duration: 4000,
-        position: 'top-center'
+        position: 'top-center',
       });
       return;
     }
@@ -346,40 +311,35 @@ export default function ForgotPassword() {
     if (!enteredOtp || enteredOtp.length !== 6) {
       toast.error('Please enter the verification code first', {
         duration: 4000,
-        position: 'top-center'
+        position: 'top-center',
       });
       setStep(2);
+      setTimeout(() => otpRefs.current[0]?.focus(), 100);
       return;
     }
 
     setLoading(true);
-    
     try {
       console.log('Resetting password for:', email, 'with OTP:', enteredOtp);
-      
-      // FIXED: Single call to reset-password with all required parameters
-      const response = await axios.post(
+      await axios.post(
         `${config.url}/api/users/reset-password`,
         null,
         {
           params: {
-            email: email,
-            otp: enteredOtp, // Use the entered OTP directly
-            newPassword: newPassword
+            email,
+            otp: enteredOtp,
+            newPassword,
           },
           headers: { 'Content-Type': 'application/json' },
-          timeout: 45000, // 45 seconds
+          timeout: 45000,
         }
       );
 
-      console.log('Password reset success:', response.data);
-      
       toast.success('Password reset successfully! Redirecting to sign in...', {
         duration: 4000,
-        position: 'top-center'
+        position: 'top-center',
       });
 
-      // Reset all state and redirect
       setTimeout(() => {
         setStep(1);
         setEmail('');
@@ -394,24 +354,21 @@ export default function ForgotPassword() {
         setGeneralError('');
         navigate('/signin');
       }, 2500);
-      
     } catch (error) {
       console.error('Password reset error:', error);
-      
       let errorMessage = 'Failed to reset password.';
-      
+
       if (error.response) {
-        const status = error.response.status;
-        const data = error.response.data;
-        
+        const { status, data } = error.response;
         console.error('Reset error details:', { status, data });
-        
+
         switch (status) {
           case 400:
             if (data && (data.includes('OTP') || data.includes('No OTP found'))) {
               errorMessage = 'Invalid or expired verification code. Please request a new one.';
               setOtpError(errorMessage);
               setStep(2);
+              setTimeout(() => otpRefs.current[0]?.focus(), 100);
             } else if (data && data.includes('password')) {
               errorMessage = data;
               setPasswordError(errorMessage);
@@ -423,10 +380,6 @@ export default function ForgotPassword() {
           case 404:
             errorMessage = 'Email not found. Please start over.';
             setStep(1);
-            setGeneralError(errorMessage);
-            break;
-          case 409:
-            errorMessage = 'Password reset conflict. Please try again.';
             setGeneralError(errorMessage);
             break;
           case 429:
@@ -447,7 +400,7 @@ export default function ForgotPassword() {
 
       toast.error(errorMessage, {
         duration: 6000,
-        position: 'top-center'
+        position: 'top-center',
       });
     } finally {
       setLoading(false);
@@ -458,26 +411,25 @@ export default function ForgotPassword() {
     if (otpTimer > 0) {
       toast.error(`Please wait ${otpTimer}s before requesting another code`, {
         duration: 3000,
-        position: 'top-center'
+        position: 'top-center',
       });
       return;
     }
-    
+
     setOtpError('');
     setGeneralError('');
-    
+
     if (!validateEmail(email)) {
       toast.error('Please enter a valid email address', {
         duration: 4000,
-        position: 'top-center'
+        position: 'top-center',
       });
       return;
     }
-    
+
     setLoading(true);
     try {
       console.log('Resending OTP to:', email);
-      
       await axios.post(
         `${config.url}/api/users/resend-otp`,
         null,
@@ -487,27 +439,20 @@ export default function ForgotPassword() {
           timeout: 45000,
         }
       );
-      
+
       toast.success('New verification code sent!', {
         duration: 5000,
-        position: 'top-center'
+        position: 'top-center',
       });
-      
-      // Reset OTP inputs
+
       setOtp(['', '', '', '', '', '']);
       setEnteredOtp('');
       startTimer();
-      
-      // Focus first input
-      setTimeout(() => {
-        otpRefs.current[0]?.focus();
-      }, 500);
-      
+      setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch (error) {
       console.error('Resend OTP error:', error);
-      
       let errorMessage = 'Failed to resend code.';
-      
+
       if (error.response?.status === 404) {
         errorMessage = 'Email not found. Please check and try again.';
         setEmailError('Email not registered');
@@ -525,7 +470,7 @@ export default function ForgotPassword() {
       setGeneralError(errorMessage);
       toast.error(errorMessage, {
         duration: 6000,
-        position: 'top-center'
+        position: 'top-center',
       });
     } finally {
       setLoading(false);
@@ -534,26 +479,34 @@ export default function ForgotPassword() {
 
   const getStepTitle = () => {
     switch (step) {
-      case 1: return 'Reset Password';
-      case 2: return 'Enter Verification Code';
-      case 3: return 'Create New Password';
-      default: return 'Reset Password';
+      case 1:
+        return 'Reset Password';
+      case 2:
+        return 'Enter Verification Code';
+      case 3:
+        return 'Create New Password';
+      default:
+        return 'Reset Password';
     }
   };
 
   const getStepDescription = () => {
     switch (step) {
-      case 1: return 'Enter your registered email address';
-      case 2: return `Enter the 6-digit code sent to ${email}`;
-      case 3: return `Create a new password for ${email}`;
-      default: return 'Reset your password';
+      case 1:
+        return 'Enter your registered email address';
+      case 2:
+        return `Enter the 6-digit code sent to ${email}`;
+      case 3:
+        return `Create a new password for ${email}`;
+      default:
+        return 'Reset your password';
     }
   };
 
   const getPasswordStrengthColor = () => {
     const { hasUppercase, hasLowercase, hasNumber, hasSpecialChar, minLength } = passwordStrength;
     const count = [hasUppercase, hasLowercase, hasNumber, hasSpecialChar, minLength].filter(Boolean).length;
-    
+
     if (count === 5) return 'bg-green-500';
     if (count >= 3) return 'bg-yellow-500';
     if (count >= 1) return 'bg-orange-500';
@@ -565,6 +518,9 @@ export default function ForgotPassword() {
       switch (step) {
         case 1:
           handleEmailSubmit(e);
+          break;
+        case 2:
+          handleOtpSubmit(e);
           break;
         case 3:
           handlePasswordReset(e);
@@ -586,7 +542,7 @@ export default function ForgotPassword() {
 
   // Focus management
   useEffect(() => {
-    if (step === 2 && otpRefs.current[0]) {
+    if (step === 2) {
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     }
   }, [step]);
@@ -619,7 +575,7 @@ export default function ForgotPassword() {
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
           className="text-center mb-8 animate-slide-up"
         >
           <div className="inline-flex items-center justify-center w-16 h-16 bg-black rounded-full mb-4 mx-auto">
@@ -627,15 +583,15 @@ export default function ForgotPassword() {
           </div>
           <h1 className="text-3xl font-bold text-black mb-2">{getStepTitle()}</h1>
           <p className="text-gray-600">{getStepDescription()}</p>
-          
+
           {/* Step indicator */}
           <div className="flex justify-center mt-4 space-x-2">
             {[1, 2, 3].map((stepNum) => (
               <motion.div
                 key={stepNum}
                 initial={false}
-                animate={{ 
-                  scale: step === stepNum ? [1, 1.1, 1] : 1 
+                animate={{
+                  scale: step === stepNum ? [1, 1.1, 1] : 1,
                 }}
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   step >= stepNum ? 'bg-black' : 'bg-gray-300'
@@ -653,11 +609,7 @@ export default function ForgotPassword() {
             onSubmit={handleEmailSubmit}
             className="space-y-6"
           >
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="relative"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative">
               <Mail className="absolute top-3 left-3 h-5 w-5 text-gray-600" />
               <input
                 type="email"
@@ -666,10 +618,10 @@ export default function ForgotPassword() {
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 onKeyPress={handleKeyPress}
                 className={`w-full pl-10 pr-4 py-3 border-2 rounded-full focus:outline-none focus:border-black transition-all duration-300 text-sm ${
-                  emailError 
-                    ? 'border-red-300 bg-red-50' 
-                    : loading 
-                    ? 'bg-gray-100 cursor-not-allowed' 
+                  emailError
+                    ? 'border-red-300 bg-red-50'
+                    : loading
+                    ? 'bg-gray-100 cursor-not-allowed'
                     : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
                 }`}
                 required
@@ -677,7 +629,7 @@ export default function ForgotPassword() {
                 autoComplete="email"
               />
               {emailError && (
-                <motion.p 
+                <motion.p
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   className="text-red-600 text-xs mt-1 flex items-center space-x-1"
@@ -689,7 +641,7 @@ export default function ForgotPassword() {
             </motion.div>
 
             {generalError && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-red-50 border border-red-200 rounded-lg p-3"
@@ -725,11 +677,7 @@ export default function ForgotPassword() {
               )}
             </motion.button>
 
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-xs text-gray-500 text-center"
-            >
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-gray-500 text-center">
               We'll send a 6-digit code to your email
             </motion.p>
           </motion.form>
@@ -744,25 +692,19 @@ export default function ForgotPassword() {
             className="space-y-6"
           >
             <motion.div className="text-center mb-6 animate-slide-up">
-              <p className="text-gray-600 text-sm mb-2">
-                Enter the 6-digit code sent to:
-              </p>
-              <p className="font-medium text-black bg-gray-100 px-3 py-1 rounded-full inline-block">
-                {email}
-              </p>
+              <p className="text-gray-600 text-sm mb-2">Enter the 6-digit code sent to:</p>
+              <p className="font-medium text-black bg-gray-100 px-3 py-1 rounded-full inline-block">{email}</p>
             </motion.div>
 
             {/* Circular OTP Inputs */}
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center">
               <div className="flex justify-center space-x-3 mb-4">
                 {otp.map((digit, index) => (
                   <input
                     key={index}
-                    ref={(el) => { otpRefs.current[index] = el; }}
+                    ref={(el) => {
+                      otpRefs.current[index] = el;
+                    }}
                     type="text"
                     maxLength={1}
                     value={digit}
@@ -770,34 +712,34 @@ export default function ForgotPassword() {
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
                     onFocus={(e) => e.target.select()}
                     className={`w-14 h-14 text-xl font-mono rounded-full border-2 text-center focus:outline-none focus:ring-4 focus:ring-black/10 transition-all duration-200 ${
-                      otpError 
-                        ? 'border-red-400 bg-red-50' 
-                        : digit 
-                        ? 'border-green-400 bg-green-50' 
-                        : loading 
-                        ? 'bg-gray-100 border-gray-300 cursor-not-allowed' 
+                      otpError
+                        ? 'border-red-400 bg-red-50'
+                        : digit
+                        ? 'border-green-400 bg-green-50'
+                        : loading
+                        ? 'bg-gray-100 border-gray-300 cursor-not-allowed'
                         : 'border-gray-300 hover:border-gray-400'
                     }`}
                     disabled={loading}
                     placeholder=""
-                    style={{ 
+                    style={{
                       fontSize: '1.25rem',
-                      letterSpacing: '1px'
+                      letterSpacing: '1px',
                     }}
                   />
                 ))}
               </div>
-              
+
               {/* Progress Bar */}
               <div className="w-full bg-gray-200 rounded-full h-1 mb-2">
-                <div 
+                <div
                   className="bg-blue-600 h-1 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${(enteredOtp.length / 6) * 100}%` }}
                 />
               </div>
-              
+
               {otpError && (
-                <motion.p 
+                <motion.p
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="text-red-600 text-xs flex items-center justify-center space-x-1 mt-2"
@@ -807,13 +749,13 @@ export default function ForgotPassword() {
                 </motion.p>
               )}
             </motion.div>
-            
+
             {/* Timer & Resend */}
             <motion.div className="text-center space-y-3">
-              <motion.div 
+              <motion.div
                 className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  otpTimer > 0 
-                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-200' 
+                  otpTimer > 0
+                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-200'
                     : 'bg-gray-100 text-gray-700 border-2 border-gray-300 hover:bg-gray-200 cursor-pointer'
                 }`}
                 whileHover={otpTimer === 0 ? { scale: 1.02 } : {}}
@@ -824,7 +766,9 @@ export default function ForgotPassword() {
                 ) : otpTimer > 0 ? (
                   <>
                     <Clock className={`h-4 w-4 ${otpTimer < 20 ? 'animate-pulse' : ''}`} />
-                    <span className="font-mono">{Math.floor(otpTimer/60)}:{(otpTimer%60).toString().padStart(2, '0')}</span>
+                    <span className="font-mono">
+                      {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
+                    </span>
                   </>
                 ) : (
                   <>
@@ -833,14 +777,14 @@ export default function ForgotPassword() {
                   </>
                 )}
               </motion.div>
-              
+
               <p className="text-xs text-gray-500">
-                Code expires in {Math.floor(otpTimer/60)}:{(otpTimer%60).toString().padStart(2, '0')}
+                Code expires in {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
               </p>
             </motion.div>
 
             {generalError && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-red-50 border border-red-200 rounded-lg p-3"
@@ -908,16 +852,10 @@ export default function ForgotPassword() {
           >
             <motion.div className="text-center mb-6 animate-slide-up">
               <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-3" />
-              <p className="text-gray-600 text-sm">
-                Verification successful! Create your new password:
-              </p>
+              <p className="text-gray-600 text-sm">Verification successful! Create your new password:</p>
             </motion.div>
 
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="relative"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative">
               <Lock className="absolute top-3 left-3 h-5 w-5 text-gray-600" />
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -926,10 +864,10 @@ export default function ForgotPassword() {
                 onChange={(e) => handleInputChange('newPassword', e.target.value)}
                 onKeyPress={handleKeyPress}
                 className={`w-full pl-10 pr-10 py-3 border-2 rounded-full focus:outline-none focus:border-black transition-all duration-300 text-sm ${
-                  passwordError 
-                    ? 'border-red-300 bg-red-50' 
-                    : loading 
-                    ? 'bg-gray-100 cursor-not-allowed' 
+                  passwordError
+                    ? 'border-red-300 bg-red-50'
+                    : loading
+                    ? 'bg-gray-100 cursor-not-allowed'
                     : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
                 }`}
                 required
@@ -946,9 +884,9 @@ export default function ForgotPassword() {
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </motion.button>
-              
+
               {passwordError && (
-                <motion.p 
+                <motion.p
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   className="text-red-600 text-xs mt-1 flex items-center space-x-1"
@@ -960,7 +898,7 @@ export default function ForgotPassword() {
 
               {/* Password Strength Indicator */}
               {newPassword && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   className="mt-3 p-3 bg-gray-50 rounded-lg"
@@ -968,7 +906,7 @@ export default function ForgotPassword() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-600">Password Strength</span>
                     <div className={`w-20 h-2 rounded-full overflow-hidden bg-gray-200`}>
-                      <motion.div 
+                      <motion.div
                         className={`h-full rounded-full transition-all duration-300 ${getPasswordStrengthColor()}`}
                         initial={{ width: 0 }}
                         animate={{ width: `${(Object.values(passwordStrength).filter(Boolean).length / 5) * 100}%` }}
@@ -978,12 +916,8 @@ export default function ForgotPassword() {
                 </motion.div>
               )}
             </motion.div>
-            
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="relative"
-            >
+
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative">
               <Lock className="absolute top-3 left-3 h-5 w-5 text-gray-600" />
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
@@ -992,10 +926,10 @@ export default function ForgotPassword() {
                 onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                 onKeyPress={handleKeyPress}
                 className={`w-full pl-10 pr-10 py-3 border-2 rounded-full focus:outline-none focus:border-black transition-all duration-300 text-sm ${
-                  confirmPasswordError 
-                    ? 'border-red-300 bg-red-50' 
-                    : loading 
-                    ? 'bg-gray-100 cursor-not-allowed' 
+                  confirmPasswordError
+                    ? 'border-red-300 bg-red-50'
+                    : loading
+                    ? 'bg-gray-100 cursor-not-allowed'
                     : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
                 }`}
                 required
@@ -1012,9 +946,9 @@ export default function ForgotPassword() {
               >
                 {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </motion.button>
-              
+
               {confirmPasswordError && (
-                <motion.p 
+                <motion.p
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   className="text-red-600 text-xs mt-1 flex items-center space-x-1"
@@ -1026,7 +960,7 @@ export default function ForgotPassword() {
             </motion.div>
 
             {generalError && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-red-50 border border-red-200 rounded-lg p-3"
@@ -1050,7 +984,6 @@ export default function ForgotPassword() {
                   setPasswordError('');
                   setConfirmPasswordError('');
                   setGeneralError('');
-                  // Focus first OTP input
                   setTimeout(() => otpRefs.current[0]?.focus(), 100);
                 }}
                 disabled={loading}
@@ -1096,7 +1029,7 @@ export default function ForgotPassword() {
         )}
 
         {/* Footer */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mt-6 space-y-2 pt-6 border-t border-gray-200"
