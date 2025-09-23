@@ -41,7 +41,9 @@ const Profile = () => {
   // Fetch user data on component mount
   useEffect(() => {
     const userId = localStorage.getItem('id');
-    if (!userId) {
+    const token = localStorage.getItem('token');
+    if (!userId || !token) {
+      showNotification('error', 'Please sign in to view your profile');
       navigate('/signin');
       return;
     }
@@ -51,24 +53,19 @@ const Profile = () => {
   const fetchUserData = async (userId) => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
       const response = await axios.get(`${API_BASE_URL}/view/${userId}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
 
       const user = response.data;
       const newUserData = {
-        id: user.id ? user.id : 3,
-        username: user.username ? user.username : 'Avinash06',
-        email: user.email ? user.email : 'avinashdola0@gmail.com',
-        userId: user.id ? user.id : 3,
-        isAdmin: user.isAdmin !== undefined ? user.isAdmin : false,
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        userId: user.id,
+        isAdmin: user.isAdmin,
         profilePicture: user.profilePicture ? `data:image/jpeg;base64,${user.profilePicture}` : null,
       };
       setUserData(newUserData);
@@ -76,9 +73,18 @@ const Profile = () => {
     } catch (error) {
       console.error('Error fetching user data:', error);
       showNotification('error', 'Failed to load profile data');
+      setUserData({
+        id: 3,
+        username: 'Avinash06',
+        email: 'avinashdola0@gmail.com',
+        userId: 3,
+        isAdmin: false,
+        profilePicture: null,
+      });
       if (error.response && error.response.status === 401) {
-        localStorage.removeItem('userId');
+        localStorage.removeItem('id');
         localStorage.removeItem('token');
+        localStorage.removeItem('username');
         navigate('/signin');
       }
     } finally {
@@ -129,7 +135,9 @@ const Profile = () => {
       setIsUploading(true);
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('No authentication token found');
+        showNotification('error', 'Please sign in again');
+        navigate('/signin');
+        return;
       }
 
       await axios.post(
@@ -143,10 +151,17 @@ const Profile = () => {
         }
       );
       showNotification('success', 'Profile picture updated successfully!');
+      fetchUserData(userData.id); // Refresh user data after upload
     } catch (error) {
       console.error('Upload error:', error);
       if (error.response && error.response.status === 400) {
-        showNotification('error', error.response.data);
+        showNotification('error', error.response.data.message || 'Failed to upload profile picture');
+      } else if (error.response && error.response.status === 401) {
+        showNotification('error', 'Session expired. Please sign in again.');
+        localStorage.removeItem('id');
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        navigate('/signin');
       } else {
         showNotification('error', 'Failed to upload profile picture');
       }
@@ -172,7 +187,9 @@ const Profile = () => {
       setIsSaving(true);
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('No authentication token found');
+        showNotification('error', 'Please sign in again');
+        navigate('/signin');
+        return;
       }
 
       const updateData = {
@@ -192,16 +209,19 @@ const Profile = () => {
         showNotification('success', 'Profile updated successfully!');
         setIsEditing(false);
         localStorage.setItem('username', userData.username);
+        fetchUserData(userData.id); // Refresh user data after save
       } else {
-        showNotification('error', response.data ? response.data : 'Failed to update profile');
+        showNotification('error', response.data.message || 'Failed to update profile');
       }
     } catch (error) {
       console.error('Update error:', error);
       if (error.response && error.response.status === 409) {
-        showNotification('error', error.response.data);
+        showNotification('error', error.response.data.message || 'Profile update conflict');
       } else if (error.response && error.response.status === 401) {
-        localStorage.removeItem('userId');
+        showNotification('error', 'Session expired. Please sign in again.');
+        localStorage.removeItem('id');
         localStorage.removeItem('token');
+        localStorage.removeItem('username');
         navigate('/signin');
       } else {
         showNotification('error', 'Failed to update profile');
@@ -240,7 +260,9 @@ const Profile = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('No authentication token found');
+        showNotification('error', 'Please sign in again');
+        navigate('/signin');
+        return;
       }
 
       const response = await axios.put(`${API_BASE_URL}/update-password/${userData.id}`, {
@@ -260,17 +282,18 @@ const Profile = () => {
           confirmNewPassword: '',
         });
       } else {
-        showNotification('error', response.data.message ? response.data.message : 'Failed to update password');
+        showNotification('error', response.data.message || 'Failed to update password');
       }
     } catch (error) {
       console.error('Password update error:', error);
       if (error.response && error.response.status === 401) {
-        showNotification('error', 'Current password is incorrect');
-        localStorage.removeItem('userId');
+        showNotification('error', 'Current password is incorrect or session expired');
+        localStorage.removeItem('id');
         localStorage.removeItem('token');
+        localStorage.removeItem('username');
         navigate('/signin');
       } else if (error.response && error.response.status === 400) {
-        showNotification('error', error.response.data.message ? error.response.data.message : 'Invalid password format');
+        showNotification('error', error.response.data.message || 'Invalid password format');
       } else {
         showNotification('error', 'Failed to update password');
       }
@@ -302,7 +325,7 @@ const Profile = () => {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem('userId');
+    localStorage.removeItem('id');
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     navigate('/signin');
@@ -413,7 +436,7 @@ const Profile = () => {
                     : 'border-gray-200 hover:border-black/50 group-hover:border-blue-300'
                 } transition-all duration-300 bg-gradient-to-br from-white to-gray-50 shadow-lg`}>
                   <img
-                    src={userData.avatar ? userData.avatar : userData.profilePicture ? userData.profilePicture : '/api/placeholder/144/144?text=👤'}
+                    src={userData.avatar || userData.profilePicture || '/api/placeholder/144/144?text=👤'}
                     alt="Profile"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
