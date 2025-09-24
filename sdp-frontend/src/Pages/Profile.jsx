@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Camera, Mail, Lock, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Camera, Mail, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 import config from '../../config';
@@ -21,19 +21,7 @@ const Profile = () => {
     userId: null,
     isAdmin: false,
   });
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmNewPassword: '',
-  });
   const API_BASE_URL = `${config.url}/api/users`;
-
-  // Password validation regex patterns
-  const passwordRegex = {
-    hasNumber: /\d/,
-    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/,
-    hasUppercase: /[A-Z]/,
-  };
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -251,83 +239,6 @@ const Profile = () => {
     }
   };
 
-  const handlePasswordUpdate = async () => {
-    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmNewPassword) {
-      showNotification('error', 'All password fields are required');
-      return;
-    }
-    if (passwordData.newPassword !== passwordData.confirmNewPassword) {
-      showNotification('error', 'New password and confirmation do not match');
-      return;
-    }
-    const minLength = 8;
-    const hasNumber = passwordRegex.hasNumber.test(passwordData.newPassword);
-    const hasSpecialChar = passwordRegex.hasSpecialChar.test(passwordData.newPassword);
-    const hasUppercase = passwordRegex.hasUppercase.test(passwordData.newPassword);
-    if (
-      passwordData.newPassword.length < minLength ||
-      !hasNumber ||
-      !hasSpecialChar ||
-      !hasUppercase
-    ) {
-      showNotification('error', 'New password must be at least 8 characters, include uppercase, number, and special character');
-      return;
-    }
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        showNotification('error', 'Please sign in again');
-        navigate('/signin');
-        return;
-      }
-      const response = await axios.put(`${API_BASE_URL}/update-password/${userData.id}`, {
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.data.success) {
-        showNotification('success', 'Password updated successfully!');
-        setPasswordData({
-          currentPassword: '',
-          newPassword: '',
-          confirmNewPassword: '',
-        });
-      } else {
-        showNotification('error', response.data.message || 'Failed to update password');
-      }
-    } catch (error) {
-      console.error('Password update error:', error.response?.data || error.message);
-      if (error.response?.status === 401) {
-        showNotification('error', 'Current password is incorrect or session expired');
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        localStorage.removeItem('rememberMe');
-        localStorage.removeItem('rememberUser');
-        navigate('/signin');
-      } else if (error.response?.status === 400) {
-        showNotification('error', error.response.data.message || 'Invalid password format');
-      } else {
-        showNotification('error', 'Failed to update password');
-      }
-    }
-  };
-
-  const getPasswordStrength = () => {
-    if (!passwordData.newPassword) return { strength: 'empty', label: 'Enter password' };
-    const length = passwordData.newPassword.length >= 8;
-    const hasNumber = passwordRegex.hasNumber.test(passwordData.newPassword);
-    const hasSpecialChar = passwordRegex.hasSpecialChar.test(passwordData.newPassword);
-    const hasUppercase = passwordRegex.hasUppercase.test(passwordData.newPassword);
-    const checks = [length, hasNumber, hasSpecialChar, hasUppercase];
-    const passed = checks.filter(Boolean).length;
-    if (passed === 4) return { strength: 'strong', label: 'Strong' };
-    if (passed >= 2) return { strength: 'medium', label: 'Medium' };
-    return { strength: 'weak', label: 'Weak' };
-  };
-
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     const tabContent = document.querySelector('.tab-content');
@@ -345,7 +256,7 @@ const Profile = () => {
   };
 
   const tabs = [
-    { id: 'profile', label: 'Profile & Security', icon: Mail },
+    { id: 'profile', label: 'Profile', icon: Mail },
   ];
 
   if (isLoading) {
@@ -358,8 +269,6 @@ const Profile = () => {
       </div>
     );
   }
-
-  const passwordStrength = getPasswordStrength();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 text-black">
@@ -582,120 +491,6 @@ const Profile = () => {
                       className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-3 px-4 text-base backdrop-blur-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300 resize-none"
                       disabled
                     />
-                  </div>
-                </div>
-                {/* Security Section */}
-                <div className="space-y-4">
-                  <div className="text-center py-4">
-                    <Lock className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Password Security</h3>
-                    <p className="text-gray-600 max-w-md mx-auto text-sm">
-                      Update your password to keep your account secure. We recommend using a strong, unique password.
-                    </p>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        Current Password
-                      </label>
-                      <input
-                        type="password"
-                        value={passwordData.currentPassword}
-                        onChange={(e) =>
-                          setPasswordData({ ...passwordData, currentPassword: e.target.value })
-                        }
-                        className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300"
-                        placeholder="Enter current password"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        New Password
-                      </label>
-                      <input
-                        type="password"
-                        value={passwordData.newPassword}
-                        onChange={(e) =>
-                          setPasswordData({ ...passwordData, newPassword: e.target.value })
-                        }
-                        className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300"
-                        placeholder="Create a new password"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        Confirm New Password
-                      </label>
-                      <input
-                        type="password"
-                        value={passwordData.confirmNewPassword}
-                        onChange={(e) =>
-                          setPasswordData({ ...passwordData, confirmNewPassword: e.target.value })
-                        }
-                        className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300"
-                        placeholder="Confirm new password"
-                      />
-                    </div>
-                    {passwordData.newPassword && (
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-300 ${
-                                passwordStrength.strength === 'strong'
-                                  ? 'bg-green-500'
-                                  : passwordStrength.strength === 'medium'
-                                  ? 'bg-yellow-500'
-                                  : 'bg-red-500'
-                              }`}
-                              style={{ width: `${Math.min((passwordData.newPassword.length / 12) * 100, 100)}%` }}
-                            />
-                          </div>
-                          <span className={`text-xs font-medium ${
-                            passwordStrength.strength === 'strong' ? 'text-green-600' :
-                            passwordStrength.strength === 'medium' ? 'text-yellow-600' : 'text-red-600'
-                          }`}>
-                            {passwordStrength.label}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-500 space-y-1">
-                          <div className={`flex items-center space-x-2 ${passwordData.newPassword.length >= 8 ? 'text-green-600' : 'text-red-600'}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${passwordData.newPassword.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                            <span>At least 8 characters</span>
-                          </div>
-                          <div className={`flex items-center space-x-2 ${passwordRegex.hasNumber.test(passwordData.newPassword) ? 'text-green-600' : 'text-red-600'}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${passwordRegex.hasNumber.test(passwordData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                            <span>Contains a number</span>
-                          </div>
-                          <div className={`flex items-center space-x-2 ${passwordRegex.hasSpecialChar.test(passwordData.newPassword) ? 'text-green-600' : 'text-red-600'}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${passwordRegex.hasSpecialChar.test(passwordData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                            <span>Contains special character</span>
-                          </div>
-                          <div className={`flex items-center space-x-2 ${passwordRegex.hasUppercase.test(passwordData.newPassword) ? 'text-green-600' : 'text-red-600'}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${passwordRegex.hasUppercase.test(passwordData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                            <span>Contains uppercase letter</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    <button
-                      onClick={handlePasswordUpdate}
-                      disabled={!passwordData.newPassword || passwordData.newPassword !== passwordData.confirmNewPassword}
-                      className={`w-full py-4 rounded-2xl text-lg font-semibold flex items-center justify-center space-x-3 transition-all duration-300 ${
-                        passwordData.newPassword && passwordData.newPassword === passwordData.confirmNewPassword
-                          ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:scale-105 text-white'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      }`}
-                    >
-                      <Lock className="h-5 w-5" />
-                      <span>Update Password</span>
-                    </button>
-                  </div>
-                  <div className="pt-4 border-t border-gray-200">
-                    <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1">
-                      <span>Forgot Password?</span>
-                      <Mail className="h-4 w-4" />
-                    </button>
                   </div>
                 </div>
                 {isEditing && (
