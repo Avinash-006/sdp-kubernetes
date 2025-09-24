@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Camera, Mail, Lock, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
-import config from '../../config'; // Adjust path to your config.js file
+import config from '../../config';
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -37,15 +37,42 @@ const Profile = () => {
 
   // Fetch user data on component mount
   useEffect(() => {
-    const userId = localStorage.getItem('id');
+    const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    if (!userId || !token) {
-      console.warn('Missing userId or token in localStorage:', { userId, token });
+    
+    if (!storedUser) {
+      console.warn('No user data found in localStorage');
       showNotification('error', 'Please sign in to view your profile');
       navigate('/signin');
       return;
     }
-    fetchUserData(userId, token);
+
+    const user = JSON.parse(storedUser);
+    if (!user.id || !user.username) {
+      console.warn('Invalid user data in localStorage:', user);
+      showNotification('error', 'Invalid user data. Please sign in again.');
+      navigate('/signin');
+      return;
+    }
+
+    // Set initial user data from localStorage
+    setUserData({
+      id: user.id,
+      username: user.username,
+      email: user.email || '',
+      userId: user.id,
+      isAdmin: user.isAdmin || false,
+      profilePicture: null,
+      avatar: null,
+    });
+
+    // Fetch updated user data from API
+    if (token) {
+      fetchUserData(user.id, token);
+    } else {
+      console.warn('No token found in localStorage');
+      setIsLoading(false);
+    }
   }, []);
 
   const fetchUserData = async (userId, token) => {
@@ -62,28 +89,27 @@ const Profile = () => {
         username: user.username,
         email: user.email,
         userId: user.id,
-        isAdmin: user.isAdmin,
+        isAdmin: user.isAdmin || false,
         profilePicture: user.profilePicture ? `data:image/jpeg;base64,${user.profilePicture}` : null,
+        avatar: null,
       };
       setUserData(newUserData);
-      localStorage.setItem('username', newUserData.username);
+      localStorage.setItem('user', JSON.stringify({
+        id: newUserData.id,
+        username: newUserData.username,
+        email: newUserData.email,
+        isAdmin: newUserData.isAdmin,
+      }));
     } catch (error) {
       console.error('Error fetching user data:', error.response?.data || error.message);
       showNotification('error', 'Failed to load profile data. Using cached data.');
-      setUserData({
-        id: 3,
-        username: 'Avinash06',
-        email: 'avinashdola0@gmail.com',
-        userId: 3,
-        isAdmin: false,
-        profilePicture: null,
-      });
       if (error.response?.status === 401) {
         console.warn('Unauthorized access, token may be invalid or expired');
         showNotification('error', 'Session expired. Please sign in again.');
-        localStorage.removeItem('id');
+        localStorage.removeItem('user');
         localStorage.removeItem('token');
-        localStorage.removeItem('username');
+        localStorage.removeItem('rememberMe');
+        localStorage.removeItem('rememberUser');
         navigate('/signin');
       }
     } finally {
@@ -143,16 +169,17 @@ const Profile = () => {
         }
       );
       showNotification('success', 'Profile picture updated successfully!');
-      fetchUserData(userData.id, token); // Refresh user data after upload
+      fetchUserData(userData.id, token);
     } catch (error) {
       console.error('Upload error:', error.response?.data || error.message);
       if (error.response?.status === 400) {
         showNotification('error', error.response.data.message || 'Failed to upload profile picture');
       } else if (error.response?.status === 401) {
         showNotification('error', 'Session expired. Please sign in again.');
-        localStorage.removeItem('id');
+        localStorage.removeItem('user');
         localStorage.removeItem('token');
-        localStorage.removeItem('username');
+        localStorage.removeItem('rememberMe');
+        localStorage.removeItem('rememberUser');
         navigate('/signin');
       } else {
         showNotification('error', 'Failed to upload profile picture');
@@ -195,8 +222,13 @@ const Profile = () => {
       if (response.data.includes('successfully')) {
         showNotification('success', 'Profile updated successfully!');
         setIsEditing(false);
-        localStorage.setItem('username', userData.username);
-        fetchUserData(userData.id, token); // Refresh user data after save
+        localStorage.setItem('user', JSON.stringify({
+          id: userData.id,
+          username: userData.username,
+          email: userData.email,
+          isAdmin: userData.isAdmin,
+        }));
+        fetchUserData(userData.id, token);
       } else {
         showNotification('error', response.data.message || 'Failed to update profile');
       }
@@ -206,9 +238,10 @@ const Profile = () => {
         showNotification('error', error.response.data.message || 'Profile update conflict');
       } else if (error.response?.status === 401) {
         showNotification('error', 'Session expired. Please sign in again.');
-        localStorage.removeItem('id');
+        localStorage.removeItem('user');
         localStorage.removeItem('token');
-        localStorage.removeItem('username');
+        localStorage.removeItem('rememberMe');
+        localStorage.removeItem('rememberUser');
         navigate('/signin');
       } else {
         showNotification('error', 'Failed to update profile');
@@ -269,9 +302,10 @@ const Profile = () => {
       console.error('Password update error:', error.response?.data || error.message);
       if (error.response?.status === 401) {
         showNotification('error', 'Current password is incorrect or session expired');
-        localStorage.removeItem('id');
+        localStorage.removeItem('user');
         localStorage.removeItem('token');
-        localStorage.removeItem('username');
+        localStorage.removeItem('rememberMe');
+        localStorage.removeItem('rememberUser');
         navigate('/signin');
       } else if (error.response?.status === 400) {
         showNotification('error', error.response.data.message || 'Invalid password format');
@@ -303,9 +337,10 @@ const Profile = () => {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem('id');
+    localStorage.removeItem('user');
     localStorage.removeItem('token');
-    localStorage.removeItem('username');
+    localStorage.removeItem('rememberMe');
+    localStorage.removeItem('rememberUser');
     navigate('/signin');
   };
 
