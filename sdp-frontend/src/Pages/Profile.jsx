@@ -6,9 +6,7 @@ import config from '../../config';
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('profile');
-  const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showAlert, setShowAlert] = useState({ type: '', message: '', show: false });
   const navigate = useNavigate();
@@ -178,67 +176,6 @@ const Profile = () => {
     }
   };
 
-  const handleSave = async () => {
-    if (!userData.username.trim() || !userData.email.trim()) {
-      showNotification('error', 'Username and email cannot be empty');
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(userData.email)) {
-      showNotification('error', 'Please enter a valid email address');
-      return;
-    }
-    try {
-      setIsSaving(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        showNotification('error', 'Please sign in again');
-        navigate('/signin');
-        return;
-      }
-      const updateData = {
-        id: userData.id,
-        username: userData.username,
-        email: userData.email,
-        isAdmin: userData.isAdmin,
-      };
-      const response = await axios.put(`${API_BASE_URL}/update`, updateData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.data.includes('successfully')) {
-        showNotification('success', 'Profile updated successfully!');
-        setIsEditing(false);
-        localStorage.setItem('user', JSON.stringify({
-          id: userData.id,
-          username: userData.username,
-          email: userData.email,
-          isAdmin: userData.isAdmin,
-        }));
-        fetchUserData(userData.id, token);
-      } else {
-        showNotification('error', response.data.message || 'Failed to update profile');
-      }
-    } catch (error) {
-      console.error('Update error:', error.response?.data || error.message);
-      if (error.response?.status === 409) {
-        showNotification('error', error.response.data.message || 'Profile update conflict');
-      } else if (error.response?.status === 401) {
-        showNotification('error', 'Session expired. Please sign in again.');
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        localStorage.removeItem('rememberMe');
-        localStorage.removeItem('rememberUser');
-        navigate('/signin');
-      } else {
-        showNotification('error', 'Failed to update profile');
-      }
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     const tabContent = document.querySelector('.tab-content');
@@ -392,34 +329,6 @@ const Profile = () => {
                   <p className="text-blue-600 text-sm font-semibold">Administrator</p>
                 )}
               </div>
-              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                <button
-                  onClick={() => {
-                    if (isEditing) {
-                      handleSave();
-                    } else {
-                      setIsEditing(true);
-                    }
-                  }}
-                  disabled={isSaving}
-                  className={`px-8 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 flex items-center space-x-3 ${
-                    isEditing
-                      ? isSaving
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:scale-105'
-                      : 'border-2 border-black hover:bg-black hover:text-white'
-                  }`}
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <span>{isEditing ? 'Save Changes' : 'Edit Profile'}</span>
-                  )}
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -457,12 +366,8 @@ const Profile = () => {
                     <input
                       type="text"
                       value={userData.username}
-                      onChange={(e) => setUserData({ ...userData, username: e.target.value })}
-                      disabled={!isEditing || isSaving}
-                      className={`w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg backdrop-blur-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300 ${
-                        isEditing ? 'hover:border-gray-300' : 'cursor-not-allowed opacity-70'
-                      }`}
-                      placeholder="Enter your username"
+                      disabled
+                      className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg backdrop-blur-sm cursor-not-allowed opacity-70"
                     />
                   </div>
                   <div>
@@ -473,12 +378,8 @@ const Profile = () => {
                     <input
                       type="email"
                       value={userData.email}
-                      onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-                      disabled={!isEditing || isSaving}
-                      className={`w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg backdrop-blur-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300 ${
-                        isEditing ? 'hover:border-gray-300' : 'cursor-not-allowed opacity-70'
-                      }`}
-                      placeholder="Enter your email"
+                      disabled
+                      className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg backdrop-blur-sm cursor-not-allowed opacity-70"
                     />
                   </div>
                   <div className="pt-4">
@@ -488,32 +389,11 @@ const Profile = () => {
                     <textarea
                       rows={3}
                       placeholder="Tell us about yourself..."
-                      className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-3 px-4 text-base backdrop-blur-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-200/50 focus:bg-white transition-all duration-300 resize-none"
+                      className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-3 px-4 text-base backdrop-blur-sm cursor-not-allowed opacity-70 resize-none"
                       disabled
                     />
                   </div>
                 </div>
-                {isEditing && (
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className={`w-full bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-gray-900 disabled:from-gray-400 disabled:to-gray-500 text-white hover:scale-105 hover:shadow-2xl transition-all duration-300 py-4 rounded-2xl text-lg font-semibold flex items-center justify-center space-x-3 ${
-                      isSaving ? 'cursor-not-allowed' : 'hover:rotate-1'
-                    }`}
-                  >
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span>Saving Profile...</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="h-5 w-5" />
-                        <span>Save Changes</span>
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
             )}
           </div>
