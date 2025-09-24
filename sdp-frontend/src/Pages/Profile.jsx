@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Camera, Mail, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 import config from '../../config';
 
@@ -19,13 +18,10 @@ const Profile = () => {
     userId: null,
     isAdmin: false,
   });
-  const API_BASE_URL = `${config.url}/api/users`;
 
-  // Fetch user data on component mount
+  // Load user data from localStorage only
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    
     if (!storedUser) {
       console.warn('No user data found in localStorage');
       showNotification('error', 'Please sign in to view your profile');
@@ -52,56 +48,8 @@ const Profile = () => {
       avatar: null,
     });
 
-    // Fetch updated user data from API
-    if (token) {
-      fetchUserData(user.id, token);
-    } else {
-      console.warn('No token found in localStorage');
-      setIsLoading(false);
-    }
+    setIsLoading(false);
   }, []);
-
-  const fetchUserData = async (userId, token) => {
-    try {
-      setIsLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/view/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const user = response.data;
-      const newUserData = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        userId: user.id,
-        isAdmin: user.isAdmin || false,
-        profilePicture: user.profilePicture ? `data:image/jpeg;base64,${user.profilePicture}` : null,
-        avatar: null,
-      };
-      setUserData(newUserData);
-      localStorage.setItem('user', JSON.stringify({
-        id: newUserData.id,
-        username: newUserData.username,
-        email: newUserData.email,
-        isAdmin: newUserData.isAdmin,
-      }));
-    } catch (error) {
-      console.error('Error fetching user data:', error.response?.data || error.message);
-      showNotification('error', 'Failed to load profile data. Using cached data.');
-      if (error.response?.status === 401) {
-        console.warn('Unauthorized access, token may be invalid or expired');
-        showNotification('error', 'Session expired. Please sign in again.');
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        localStorage.removeItem('rememberMe');
-        localStorage.removeItem('rememberUser');
-        navigate('/signin');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const showNotification = (type, message) => {
     setShowAlert({ type, message, show: true });
@@ -120,60 +68,20 @@ const Profile = () => {
       showNotification('error', 'Profile picture must be less than 5MB');
       return;
     }
+
     const newAvatar = URL.createObjectURL(file);
     setUserData((prev) => ({
       ...prev,
       avatar: newAvatar,
       profilePictureFile: file,
     }));
-    await uploadProfilePicture(file);
-  };
 
-  const uploadProfilePicture = async (file) => {
-    if (!userData.id) {
-      showNotification('error', 'User ID not found');
-      return;
-    }
-    const formData = new FormData();
-    formData.append('profilePicture', file);
-    try {
-      setIsUploading(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        showNotification('error', 'Please sign in again');
-        navigate('/signin');
-        return;
-      }
-      await axios.post(
-        `${API_BASE_URL}/update-profile-picture/${userData.id}`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      showNotification('success', 'Profile picture updated successfully!');
-      fetchUserData(userData.id, token);
-    } catch (error) {
-      console.error('Upload error:', error.response?.data || error.message);
-      if (error.response?.status === 400) {
-        showNotification('error', error.response.data.message || 'Failed to upload profile picture');
-      } else if (error.response?.status === 401) {
-        showNotification('error', 'Session expired. Please sign in again.');
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        localStorage.removeItem('rememberMe');
-        localStorage.removeItem('rememberUser');
-        navigate('/signin');
-      } else {
-        showNotification('error', 'Failed to upload profile picture');
-      }
-      setUserData(prev => ({ ...prev, avatar: prev.profilePicture }));
-    } finally {
+    // Just simulate upload (local only, no fetch)
+    setIsUploading(true);
+    setTimeout(() => {
+      showNotification('success', 'Profile picture updated locally!');
       setIsUploading(false);
-    }
+    }, 1000);
   };
 
   const handleTabChange = (tabId) => {
@@ -218,18 +126,11 @@ const Profile = () => {
           from { opacity: 0; transform: translateX(-20px); }
           to { opacity: 1; transform: translateX(0); }
         }
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(0,0,0,0.1); }
-          50% { box-shadow: 0 0 30px rgba(0,0,0,0.2); }
-        }
         .animate-fade-in {
           animation: fade-in 0.8s ease-out forwards;
         }
         .animate-slide-in {
           animation: slide-in 0.6s ease-out forwards;
-        }
-        .pulse-glow {
-          animation: pulse-glow 2s infinite;
         }
       `}</style>
       {showAlert.show && (
@@ -279,10 +180,6 @@ const Profile = () => {
       <div className="max-w-6xl mx-auto p-6">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 rounded-3xl p-8 mb-8 animate-fade-in overflow-hidden">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-50 to-blue-50 p-8">
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_25%_25%,#e0e7ff_0%,transparent_50%)]"></div>
-              <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_75%_25%,#dbeafe_0%,transparent_50%)]"></div>
-            </div>
             <div className="relative z-10 flex flex-col lg:flex-row items-center space-y-8 lg:space-y-0 lg:space-x-12">
               <div className="relative group">
                 <div className={`w-36 h-36 rounded-full overflow-hidden border-4 ${
@@ -334,7 +231,7 @@ const Profile = () => {
         </div>
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden animate-slide-in">
           <div className="flex border-b border-gray-200/50 bg-white/50">
-            {tabs.map((tab, index) => (
+            {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
@@ -380,17 +277,6 @@ const Profile = () => {
                       value={userData.email}
                       disabled
                       className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-4 px-6 text-lg backdrop-blur-sm cursor-not-allowed opacity-70"
-                    />
-                  </div>
-                  <div className="pt-4">
-                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
-                      <span>Bio</span>
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="Tell us about yourself..."
-                      className="w-full bg-white/50 border-2 border-gray-200 rounded-2xl py-3 px-4 text-base backdrop-blur-sm cursor-not-allowed opacity-70 resize-none"
-                      disabled
                     />
                   </div>
                 </div>
