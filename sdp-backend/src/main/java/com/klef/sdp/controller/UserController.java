@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.mail.internet.MimeMessage;
 import java.util.List;
 
-@CrossOrigin("http://localhost:3000")
+@CrossOrigin("http://localhost:5173")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {

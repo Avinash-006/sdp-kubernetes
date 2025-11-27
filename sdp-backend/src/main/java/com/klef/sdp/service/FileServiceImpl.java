@@ -61,4 +61,34 @@ public class FileServiceImpl implements FileService {
             })
             .orElse("Cannot Delete");
     }
+
+    @Override
+    public FileEntity copyFileToDrive(Long fileId, int userId) throws IOException {
+        FileEntity sourceFile = fileRepository.findById(fileId)
+            .orElseThrow(() -> new RuntimeException("File not found"));
+        
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check if user already has this file (to avoid duplicates)
+        List<FileEntity> userFiles = fileRepository.findByUserId(userId);
+        boolean fileExists = userFiles.stream()
+            .anyMatch(f -> f.getFileName().equals(sourceFile.getFileName()) && 
+                         f.getFileType().equals(sourceFile.getFileType()) &&
+                         java.util.Arrays.equals(f.getFileData(), sourceFile.getFileData()));
+        
+        if (fileExists) {
+            throw new RuntimeException("File already exists in your drive");
+        }
+
+        // Create a new file entity with the same data but associated with the new user
+        FileEntity newFile = new FileEntity();
+        newFile.setFileName(sourceFile.getFileName());
+        newFile.setFileType(sourceFile.getFileType());
+        newFile.setFileData(sourceFile.getFileData());
+        newFile.setUser(user);
+        newFile.setSession(null); // Remove session association when copying to drive
+        
+        return fileRepository.save(newFile);
+    }
 }

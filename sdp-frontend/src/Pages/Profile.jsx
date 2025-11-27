@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Camera, Mail, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
+import SharedNavBar from '../components/SharedNavBar';
 import config from '../../config';
 
 const Profile = () => {
@@ -92,13 +93,6 @@ const Profile = () => {
     }
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('rememberMe');
-    localStorage.removeItem('rememberUser');
-    navigate('/signin');
-  };
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: Mail },
@@ -149,34 +143,7 @@ const Profile = () => {
           </div>
         </div>
       )}
-      <nav className="border-b border-gray-200/50 backdrop-blur-sm bg-white/80 sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">S</span>
-              </div>
-              <div className="text-2xl font-bold bg-gradient-to-r from-black to-gray-800 bg-clip-text text-transparent">
-                Swiftyy
-              </div>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => navigate("/drive")}
-                className="border-2 border-black text-black hover:bg-black hover:text-white hover:scale-110 hover:shadow-lg transition-all duration-300 ease-out rounded-full px-6 py-2 font-medium flex items-center space-x-2"
-              >
-                <span>Drive</span>
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="bg-black text-white hover:bg-gray-800 hover:scale-110 hover:shadow-xl transition-all duration-300 ease-out rounded-full px-6 py-2 font-medium flex items-center space-x-2"
-              >
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <SharedNavBar />
       <div className="max-w-6xl mx-auto p-6">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 rounded-3xl p-8 mb-8 animate-fade-in overflow-hidden">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-50 to-blue-50 p-8">

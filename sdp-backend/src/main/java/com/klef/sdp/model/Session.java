@@ -16,9 +16,11 @@ public class Session {
     private String passkey;
 
     @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 
     @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
     private Date expiresAt;
 
     @ElementCollection

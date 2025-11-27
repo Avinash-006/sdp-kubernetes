@@ -6,6 +6,7 @@ import axios from "axios";
 import { Client } from "@stomp/stompjs";
 import { useNavigate } from "react-router-dom";
 import SockJS from "sockjs-client";
+import SharedNavBar from "../components/SharedNavBar";
 import config from "../../config";
 
 export default function PassShare() {
@@ -949,6 +950,7 @@ export default function PassShare() {
   // Main session interface
   return (
     <>
+      <SharedNavBar />
       <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 text-black p-4">
         <div className="max-w-4xl mx-auto">
           {/* Header with connection status */}
@@ -983,7 +985,7 @@ export default function PassShare() {
               
               {/* Connection Status */}
               <div className="flex items-center space-x-2 text-sm">
-                <div className={`flex items-center space-x-1 ${getStatusColor(connectionStatus)}`}>
+                <div className={`flex items-center space-x-1 ${getStatusColor(connectionStatus)} px-2`}>
                   {connectionStatus === "connected" ? (
                     <Wifi className="h-4 w-4" />
                   ) : (

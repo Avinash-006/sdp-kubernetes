@@ -8,6 +8,7 @@ import Profile from './Profile';
 import Drive from './Drive';
 import AdminDashboard from './AdminDashboard';
 import PassShare from './PassShare';
+import Chat from './Chat';
 import { Toaster } from 'react-hot-toast'; // Added Toaster import
 
 export default function NavBar() {
@@ -23,6 +24,7 @@ export default function NavBar() {
         <Route path="/drive" element={<Drive />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/pass-share" element={<PassShare />} />
+        <Route path="/chat" element={<Chat />} />
       </Routes>
     </BrowserRouter>
   );

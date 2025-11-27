@@ -13,4 +13,5 @@ public interface FileService {
     FileEntity getFile(Long id);
     List<FileDTO> getUserFiles(String username);
     String delete(Long id);
+    FileEntity copyFileToDrive(Long fileId, int userId) throws IOException;
 }

@@ -16,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 
-@CrossOrigin("http://localhost:3000")
+@CrossOrigin("http://localhost:5173")
 @RestController
 @RequestMapping("/api/file")
 public class FileController {
@@ -24,9 +24,10 @@ public class FileController {
     private FileService service;
 
     @PostMapping("/upload/{userId}")
-    public String upload(@PathVariable int userId, @RequestParam("file") MultipartFile f) throws IOException {
-        service.addFile(userId, f);
-        return "Uploaded";
+    public ResponseEntity<FileDTO> upload(@PathVariable int userId, @RequestParam("file") MultipartFile f) throws IOException {
+        FileEntity fileEntity = service.addFile(userId, f);
+        FileDTO fileDTO = new FileDTO(fileEntity);
+        return ResponseEntity.ok(fileDTO);
     }
 
     @GetMapping("/download/{id}")

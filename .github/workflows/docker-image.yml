@@ -20,8 +20,8 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: avinash006
+          password: dckr_pat_86PhNRsejrHN5Xt4Su9jWX0NBSw
 
       - name: Build and push backend image
         uses: docker/build-push-action@v5
@@ -29,7 +29,7 @@ jobs:
           context: ./sdp-backend
           file: ./sdp-backend/backend.Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/sdp-backend:latest
+          tags: avinash006/sdp-kubernetes-backend:latest
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
@@ -37,4 +37,4 @@ jobs:
           context: ./sdp-frontend
           file: ./sdp-frontend/frontend.Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/sdp-frontend:latest
+          tags: avinash006/sdp-kubernetes-frontend:latest

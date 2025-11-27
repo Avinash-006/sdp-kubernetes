@@ -9,6 +9,6 @@ import java.util.List;
 
 @Repository
 public interface GroupRepository extends JpaRepository<Group, String> {
-    @Query("SELECT g FROM Group g JOIN g.usernames u WHERE u = :username")
+    @Query("SELECT g FROM Group g WHERE :username MEMBER OF g.usernames")
     List<Group> findByUsernamesContaining(String username);
 }
