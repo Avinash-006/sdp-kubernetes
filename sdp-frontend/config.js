@@ -1,6 +1,6 @@
 const config = {
-    "url": "http://localhost:8080",
-    "wsUrl": "http://localhost:8080/ws"
+    "url": "http://localhost:30080",
+    "wsUrl": "http://localhost:30080/ws"
 }
 
 export default config

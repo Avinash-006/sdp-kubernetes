@@ -11,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:30030")
 @RestController
 @RequestMapping("/api/sessions")
 public class SessionController {
